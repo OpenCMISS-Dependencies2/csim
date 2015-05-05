@@ -13,8 +13,8 @@
 # limitations under the License.cmake_minimum_required (VERSION 3.1)
 
 # The version number.
-set(CSIM_VERSION_MAJOR 0)
-set(CSIM_VERSION_MINOR 1)
+set(CSIM_VERSION_MAJOR 2)
+set(CSIM_VERSION_MINOR 0)
 set(CSIM_VERSION_PATCH 0)
 
 foreach(VERSION_PART CSIM_VERSION_MAJOR CSIM_VERSION_MINOR CSIM_VERSION_PATCH)
