@@ -52,11 +52,11 @@ public:
     CSIM_EXPORT ~Model();
 
     /**
-     * Load the model from the specified URL.
+     * Load the CellML model from the specified URL.
      * @param url The URL from which to load the model.
      * @return zero on success, non-zero if the model is not able to be loaded.
      */
-    CSIM_EXPORT int loadModel(const std::string& url);
+    CSIM_EXPORT int loadCellmlModel(const std::string& url);
 
     /**
      * Check if this model is able to be compiled into an executable form.

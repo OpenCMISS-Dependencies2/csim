@@ -13,42 +13,17 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.Some license of other
 */
+
 #include <iostream>
 
-#include "csim/model.h"
-#include "csim/error_codes.h"
 #include "xml_utils.h"
+#include "utils.h"
 
-namespace csim {
+namespace XmlUtils {
 
-Model::Model() : mModelDefinition(0)
+enum DocumentType determineDocumentType(const std::string &url)
 {
+
 }
 
-Model::Model(const Model &src)
-{
-    mModelDefinition = src.mModelDefinition;
-}
-
-Model::~Model()
-{
-    if (mModelDefinition)
-    {
-        // TODO: cast and then delete model definition
-    }
-}
-
-int Model::loadCellmlModel(const std::string &url)
-{
-    std::cout << "Loading CellML Model URL: " << url << std::endl;
-
-    return CSIM_OK;
-}
-
-bool Model::isModelInstantiated() const
-{
-    if (mModelDefinition) return true;
-    return false;
-}
-
-} // namespace csim
+} // namespace XmlUtils
