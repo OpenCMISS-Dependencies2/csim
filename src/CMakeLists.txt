@@ -35,10 +35,13 @@ configure_file(
 
 set(SOURCE_FILES
   ${CMAKE_CURRENT_SOURCE_DIR}/version.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/model.cpp
 )
 
 set(API_HEADER_FILES
   ${CMAKE_CURRENT_SOURCE_DIR}/api/csim/version.h
+  ${CMAKE_CURRENT_SOURCE_DIR}/api/csim/model.h
+  ${CMAKE_CURRENT_SOURCE_DIR}/api/csim/error_codes.h
   ${CSIM_EXPORT_H}
 )
 

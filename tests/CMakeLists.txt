@@ -12,6 +12,7 @@ mark_as_advanced(gtest_force_shared_crt)
 # test must be set to <test_name>_SRCS, likewise for
 # header files <test_name>_HDRS.
 include(version/tests.cmake)
+include(model/tests.cmake)
 
 # Cycle through all the tests 'included' above
 set(TEST_LIST)

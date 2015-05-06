@@ -1,0 +1,8 @@
+
+set(CURRENT_TEST model)
+set(CURRENT_CATEGORY api)
+list(APPEND CSIM_TESTS ${CURRENT_TEST})
+set(${CURRENT_TEST}_SRCS
+  ${CURRENT_TEST}/model.cpp
+)
+
