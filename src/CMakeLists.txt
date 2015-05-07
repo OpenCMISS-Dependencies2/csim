@@ -33,9 +33,12 @@ configure_file(
   ${CSIM_CONFIG_H}
 )
 
+FIND_PACKAGE(CellML REQUIRED)
+
 set(SOURCE_FILES
   ${CMAKE_CURRENT_SOURCE_DIR}/version.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/model.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/cellml_model_definition.cpp
 )
 
 set(API_HEADER_FILES
@@ -65,6 +68,17 @@ target_include_directories(csim
   $<INSTALL_INTERFACE:include/>
   PRIVATE
   ${CMAKE_CURRENT_BINARY_DIR}
+  ${CELLML_INCLUDE_DIR}
+)
+
+target_link_libraries(csim
+  PUBLIC
+  ${CELLML_LIBRARIES}
+)
+
+set_target_properties(csim PROPERTIES
+    OUTPUT_NAME csim
+    VERSION ${CSIM_LIBRARY_VERSION_STRING}
 )
 
 if(CSIM_TREAT_WARNINGS_AS_ERRORS)

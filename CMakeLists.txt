@@ -84,6 +84,13 @@ if( BUILD_SHARED )
   set( CSIM_BUILD_SHARED ${BUILD_SHARED} CACHE BOOL ${_PARAM_ANNOTATION} FORCE )
 endif()
 
+# CSIM_DEPENDENCY_DIR
+set(_PARAM_ANNOTATION "Dependency prefix (where to find non-system dependencies)")
+set( CSIM_DEPENDENCY_DIR "/usr/local" CACHE STRING ${_PARAM_ANNOTATION} )
+if( DEPENDENCY_DIR )
+  set( CSIM_DEPENDENCY_DIR ${DEPENDENCY_DIR} CACHE STRING ${_PARAM_ANNOTATION} FORCE )
+endif()
+
 # Keep the GUI tidy.
 internalise_cmake_variables()
 hide_distracting_variables()
@@ -96,4 +103,6 @@ if (CSIM_UNIT_TESTS)
   enable_testing()
   add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/tests)
 endif()
+
+
 
