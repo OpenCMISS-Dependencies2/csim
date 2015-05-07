@@ -9,7 +9,11 @@ public:
 
     enum ResourcesName
     {
-        SBML_MODEL_RESOURCE = 1
+        SBML_MODEL_RESOURCE = 1,
+        CELLML_SINE_MODEL_RESOURCE = 2,
+        CELLML_SINE_IMPORTS_MODEL_RESOURCE = 3,
+        CELLML_INVALID_MODEL_RESOURCE = 4,
+        CELLML_UNDERCONSTRAINED_MODEL_RESOURCE = 5
     };
 
     TestResources()
@@ -23,6 +27,22 @@ public:
         if (resourceName == TestResources::SBML_MODEL_RESOURCE)
         {
             return "@SBML_MODEL_RESOURCE@";
+        }
+        if (resourceName == TestResources::CELLML_SINE_MODEL_RESOURCE)
+        {
+            return "@CELLML_SINE_MODEL_RESOURCE@";
+        }
+        if (resourceName == TestResources::CELLML_SINE_IMPORTS_MODEL_RESOURCE)
+        {
+            return "@CELLML_SINE_IMPORTS_MODEL_RESOURCE@";
+        }
+        if (resourceName == TestResources::CELLML_INVALID_MODEL_RESOURCE)
+        {
+            return "@CELLML_INVALID_MODEL_RESOURCE@";
+        }
+        if (resourceName == TestResources::CELLML_UNDERCONSTRAINED_MODEL_RESOURCE)
+        {
+            return "@CELLML_UNDERCONSTRAINED_MODEL_RESOURCE@";
         }
         return 0;
     }

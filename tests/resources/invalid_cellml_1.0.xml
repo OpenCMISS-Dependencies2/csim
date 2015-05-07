@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <model xmlns="http://www.cellml.org/cellml/1.0#" xmlns:cmeta="http://www.cellml.org/metadata/1.0#" cmeta:id="sin_approximations_import" name="sin_approximations_import">
   <component cmeta:id="sin" name="parabolic_approx_sin">
-    <variable cmeta:id="x" name="x" private_interface="out" public_interface="in" units="dimensionless"/>
+    <v cmeta:id="x" name="x" private_interface="out" public_interface="in" units="dimensionless"/>
     <variable cmeta:id="sin" name="sin" private_interface="out" public_interface="out" units="dimensionless"/>
     <variable name="k2_oPi" private_interface="out" public_interface="out" units="dimensionless"/>
     <variable name="k2Pi" private_interface="out" public_interface="out" units="dimensionless"/>
