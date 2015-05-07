@@ -22,10 +22,18 @@
 static std::wstring s2ws(const std::string& str);
 static std::string ws2s(const std::wstring& wstr);
 
+#define StateType 1
+#define KnownType 2
+#define WantedType 3
+#define IndependentType 4
 
 CellmlModelDefinition::CellmlModelDefinition() : mUrl(""), mModelLoaded(false), mModel(0),
     mAnnotations(0), mCevas(0), mCodeInformation(0)
 {
+    mNumberOfIndependentVariables = 0;
+    mNumberOfKnownVariables = 0;
+    mNumberOfWantedVariables = 0;
+    mStateCounter = 0;
 }
 
 CellmlModelDefinition::~CellmlModelDefinition()
@@ -102,6 +110,7 @@ int CellmlModelDefinition::loadModel(const std::string &url)
                           << ws2s(msg) << std::endl;
                 return -4;
             }
+            // TODO: we are only interested in models we can work with?
             if (cci->constraintLevel() != iface::cellml_services::CORRECTLY_CONSTRAINED)
             {
                 std::cerr << "CellmlModelDefintion::loadModel: Model is not correctly constrained: "
@@ -110,6 +119,33 @@ int CellmlModelDefinition::loadModel(const std::string &url)
             }
             cci->add_ref();
             mCodeInformation = static_cast<void*>(cci);
+            // and add all state variables as wanted and the variable of integration as known
+            ObjRef<iface::cellml_services::ComputationTargetIterator> cti = cci->iterateTargets();
+            while (true)
+            {
+                ObjRef<iface::cellml_services::ComputationTarget> ct = cti->nextComputationTarget();
+                if (ct == NULL) break;
+                ObjRef<iface::cellml_api::CellMLVariable> v(ct->variable());
+                if (ct->type() == iface::cellml_services::STATE_VARIABLE)
+                {
+                    try
+                    {
+                        if (v->initialValue() != L"") mInitialValues.insert(
+                                    std::pair<std::pair<int,int>, double>(
+                                        std::pair<int,int>(StateType, mStateCounter),
+                                        v->initialValueValue()
+                                        ));
+                    } catch (...) {}
+                    mVariableTypes[v->objid()] = StateType;
+                    mVariableIndices[v->objid()] = mStateCounter;
+                    mStateCounter++;
+                }
+                else if (ct->type() == iface::cellml_services::VARIABLE_OF_INTEGRATION)
+                {
+                    mVariableTypes[v->objid()] = IndependentType;
+                    mNumberOfIndependentVariables++;
+                }
+            }
         }
         catch (...)
         {

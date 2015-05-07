@@ -2,6 +2,8 @@
 #define CELLML_MODEL_DEFINITION_H
 
 #include <string>
+#include <map>
+#include <vector>
 
 /**
  * An internal class to manage the use of CellML models.
@@ -25,6 +27,14 @@ private:
     void* mCevas;
     void* mCodeInformation;
 
+    std::map<std::pair<int,int>, double> mInitialValues;
+    std::map<std::string, int> mVariableTypes;
+    std::map<std::string, int> mVariableIndices;
+
+    int mNumberOfWantedVariables;
+    int mNumberOfKnownVariables;
+    int mNumberOfIndependentVariables;
+    int mStateCounter;
 };
 
 #endif // CELLML_MODEL_DEFINITION_H
