@@ -1,0 +1,32 @@
+
+#ifndef TEST_RESOURCES_H_
+#define TEST_RESOURCES_H_
+
+class TestResources
+{
+
+public:
+
+    enum ResourcesName
+    {
+        SBML_MODEL_RESOURCE = 1
+    };
+
+    TestResources()
+    {  }
+
+    ~TestResources()
+    {  }
+
+    static const char *getLocation(ResourcesName resourceName)
+    {
+        if (resourceName == TestResources::SBML_MODEL_RESOURCE)
+        {
+            return "@SBML_MODEL_RESOURCE@";
+        }
+        return 0;
+    }
+};
+
+#endif /* TEST_RESOURCES_H_ */
+
