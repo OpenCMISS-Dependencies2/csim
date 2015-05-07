@@ -52,6 +52,7 @@ int CellmlModelDefinition::loadModel(const std::string &url)
     {
       std::wcerr << L"Error loading model: " << urlW << std::endl;
       mModel = static_cast<void*>(NULL);
+      return -1;
     }
     return 0;
 }
