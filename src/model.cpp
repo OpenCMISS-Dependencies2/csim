@@ -17,7 +17,7 @@ limitations under the License.Some license of other
 
 #include "csim/model.h"
 #include "csim/error_codes.h"
-#include "xml_utils.h"
+#include "cellml_model_definition.h"
 
 namespace csim {
 
@@ -40,8 +40,17 @@ Model::~Model()
 
 int Model::loadCellmlModel(const std::string &url)
 {
+    if (mModelDefinition) delete static_cast<CellmlModelDefinition*>(mModelDefinition);
     std::cout << "Loading CellML Model URL: " << url << std::endl;
-
+    CellmlModelDefinition* cellml = new CellmlModelDefinition();
+    int success = cellml->loadModel(url);
+    if (success != 0)
+    {
+        std::cerr << "Model::loadCellmlModel: Unable to load the model: " << url << std::endl;
+        mModelDefinition = NULL;
+        return UNABLE_TO_LOAD_MODEL_URL;
+    }
+    mModelDefinition = static_cast<void*>(cellml);
     return CSIM_OK;
 }
 
