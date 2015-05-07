@@ -1,0 +1,3 @@
+[submodule "tests/resources/sine"]
+	path = tests/resources/sine
+	url = https://models.physiomeproject.org/w/andre/sine
