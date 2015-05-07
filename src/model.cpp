@@ -34,7 +34,8 @@ Model::~Model()
 {
     if (mModelDefinition)
     {
-        // TODO: cast and then delete model definition
+        CellmlModelDefinition* cellml = static_cast<CellmlModelDefinition*>(mModelDefinition);
+        delete cellml;
     }
 }
 
@@ -47,6 +48,7 @@ int Model::loadCellmlModel(const std::string &url)
     if (success != 0)
     {
         std::cerr << "Model::loadCellmlModel: Unable to load the model: " << url << std::endl;
+        delete cellml;
         mModelDefinition = NULL;
         return UNABLE_TO_LOAD_MODEL_URL;
     }

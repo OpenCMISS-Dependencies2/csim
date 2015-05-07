@@ -20,16 +20,39 @@
  * Prototype local methods
  */
 static std::wstring s2ws(const std::string& str);
-//static std::string ws2s(const std::wstring& wstr);
+static std::string ws2s(const std::wstring& wstr);
 
 
-CellmlModelDefinition::CellmlModelDefinition() : mUrl("")
+CellmlModelDefinition::CellmlModelDefinition() : mUrl(""), mModelLoaded(false), mModel(0),
+    mAnnotations(0), mCevas(0), mCodeInformation(0)
 {
 }
 
 CellmlModelDefinition::~CellmlModelDefinition()
 {
-    // nothing to do yet?
+    if (mModel)
+    {
+        iface::cellml_api::Model* el = static_cast<iface::cellml_api::Model*>(mModel);
+        el->release_ref();
+    }
+    if (mAnnotations)
+    {
+        iface::cellml_services::AnnotationSet* el =
+                static_cast<iface::cellml_services::AnnotationSet*>(mAnnotations);
+        el->release_ref();
+    }
+    if (mCevas)
+    {
+        iface::cellml_services::CeVAS* el =
+                static_cast<iface::cellml_services::CeVAS*>(mCevas);
+        el->release_ref();
+    }
+    if (mCodeInformation)
+    {
+        iface::cellml_services::CodeInformation* el =
+                static_cast<iface::cellml_services::CodeInformation*>(mCodeInformation);
+        el->release_ref();
+    }
 }
 
 int CellmlModelDefinition::loadModel(const std::string &url)
@@ -41,12 +64,61 @@ int CellmlModelDefinition::loadModel(const std::string &url)
     std::wstring urlW = s2ws(url);
     ObjRef<iface::cellml_api::CellMLBootstrap> cb = CreateCellMLBootstrap();
     ObjRef<iface::cellml_api::DOMModelLoader> ml = cb->modelLoader();
-    ObjRef<iface::cellml_api::Model> model;
     try
     {
-        model = ml->loadFromURL(urlW);
+        ObjRef<iface::cellml_api::Model> model = ml->loadFromURL(urlW);
         model->fullyInstantiateImports();
+        model->add_ref();
         mModel = static_cast<void*>(model);
+        // create an annotation set to manage our variable usages
+        ObjRef<iface::cellml_services::AnnotationToolService> ats = CreateAnnotationToolService();
+        ObjRef<iface::cellml_services::AnnotationSet> as = ats->createAnnotationSet();
+        as->add_ref();
+        mAnnotations = static_cast<void*>(as);
+        // mapping the connections between variables is a very expensive operation, so we want to
+        // only do it once and keep hold of the mapping (tracker item 3294)
+        ObjRef<iface::cellml_services::CeVASBootstrap> cvbs = CreateCeVASBootstrap();
+        ObjRef<iface::cellml_services::CeVAS> cevas = cvbs->createCeVASForModel(model);
+        std::wstring msg = cevas->modelError();
+        if (msg != L"")
+        {
+            std::cerr << "loadModel: Error creating CellML Variable Association Service: "
+                      << ws2s(msg) << std::endl;
+            return -2;
+        }
+        cevas->add_ref();
+        mCevas = static_cast<void*>(cevas);
+        // now check we can generate code and grab hold of the initial code information
+        ObjRef<iface::cellml_services::CodeGeneratorBootstrap> cgb = CreateCodeGeneratorBootstrap();
+        ObjRef<iface::cellml_services::CodeGenerator> cg = cgb->createCodeGenerator();
+        try
+        {
+            cg->useCeVAS(cevas);
+            ObjRef<iface::cellml_services::CodeInformation> cci = cg->generateCode(model);
+            msg = cci->errorMessage();
+            if (msg != L"")
+            {
+                std::cerr << "CellmlModelDefintion::loadModel: Error generating code: "
+                          << ws2s(msg) << std::endl;
+                return -4;
+            }
+            if (cci->constraintLevel() != iface::cellml_services::CORRECTLY_CONSTRAINED)
+            {
+                std::cerr << "CellmlModelDefintion::loadModel: Model is not correctly constrained: "
+                          << std::endl;
+                return -5;
+            }
+            cci->add_ref();
+            mCodeInformation = static_cast<void*>(cci);
+        }
+        catch (...)
+        {
+            std::cerr << "loadModel: Error generating the code information for the model" << std::endl;
+            return -3;
+        }
+
+        // if we get to here, everything worked.
+        mModelLoaded = true;
     }
     catch (...)
     {
@@ -64,9 +136,9 @@ std::wstring s2ws(const std::string& str)
     return converterX.from_bytes(str);
 }
 
-/*std::string ws2s(const std::wstring& wstr)
+std::string ws2s(const std::wstring& wstr)
 {
     typedef std::codecvt_utf8<wchar_t> convert_typeX;
     std::wstring_convert<convert_typeX, wchar_t> converterX;
     return converterX.to_bytes(wstr);
-}*/
+}
