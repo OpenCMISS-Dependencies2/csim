@@ -30,7 +30,7 @@ namespace csim {
  * This class provides the executable wrapper for a given CellML model. All functionality provided by the CellML API
  * is hidden from the user by this class.
  */
-class Model
+class CSIM_EXPORT Model
 {
 public:
     /**
@@ -38,31 +38,31 @@ public:
      *
      * Construct an empty csim::Model.
      */
-    CSIM_EXPORT Model();
+     Model();
 
     /**
      * Copy constructor
      * @param src The source model to copy.
      */
-    CSIM_EXPORT Model(const Model& src);
+     Model(const Model& src);
 
     /**
      * Destructor.
      */
-    CSIM_EXPORT ~Model();
+     ~Model();
 
     /**
      * Load the CellML model from the specified URL.
      * @param url The URL from which to load the model.
      * @return zero on success, non-zero if the model is not able to be loaded.
      */
-    CSIM_EXPORT int loadCellmlModel(const std::string& url);
+     int loadCellmlModel(const std::string& url);
 
     /**
      * Check if this model is able to be compiled into an executable form.
      * @return True if a suitable CellML model has been loaded; false otherwise.
      */
-    CSIM_EXPORT bool isModelInstantiated() const;
+     bool isModelInstantiated() const;
 
 private:
     /**
