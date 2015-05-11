@@ -27,7 +27,7 @@ static int flagVariable(const std::string& variableId, unsigned char type,
                         std::vector<iface::cellml_services::VariableEvaluationType> vets,
                         int& count, CellmlApiObjects* capi,
                         std::map<std::string, unsigned char>& variableTypes,
-                        std::map<std::string, int>& mVariableIndices);
+                        std::map<std::string, std::map<unsigned char, int> >& mVariableIndices);
 static ObjRef<iface::cellml_api::CellMLVariable> findLocalVariable(CellmlApiObjects* capi, const std::string& variableId);
 typedef std::pair<std::string, std::string> CVpair;
 static CVpair splitName(const std::string& s);
@@ -126,7 +126,7 @@ int CellmlModelDefinition::loadModel(const std::string &url)
                 return -5;
             }
             mCapi->codeInformation = cci;
-            // and add all state variables as output and the variable of integration as input
+            // flag all state variables and the variable of integration
             ObjRef<iface::cellml_services::ComputationTargetIterator> cti = cci->iterateTargets();
             while (true)
             {
@@ -135,16 +135,8 @@ int CellmlModelDefinition::loadModel(const std::string &url)
                 ObjRef<iface::cellml_api::CellMLVariable> v(ct->variable());
                 if (ct->type() == iface::cellml_services::STATE_VARIABLE)
                 {
-                    /*try
-                    {
-                        if (v->initialValue() != L"") mInitialValues.insert(
-                                    std::pair<std::pair<int,int>, double>(
-                                        std::pair<int,int>(StateType, mStateCounter),
-                                        v->initialValueValue()
-                                        ));
-                    } catch (...) {}*/
                     mVariableTypes[v->objid()] = StateType;
-                    mStateVariableIndices[v->objid()] = mStateCounter;
+                    mVariableIndices[v->objid()][StateType] = mStateCounter;
                     mStateCounter++;
                 }
                 else if (ct->type() == iface::cellml_services::VARIABLE_OF_INTEGRATION)
@@ -222,12 +214,11 @@ int flagVariable(const std::string& variableId, unsigned char type,
                  std::vector<iface::cellml_services::VariableEvaluationType> vets,
                  int& count, CellmlApiObjects* capi,
                  std::map<std::string, unsigned char>& variableTypes,
-                 std::map<std::string, int>& variableIndices)
+                 std::map<std::string, std::map<unsigned char, int> >& variableIndices)
 {
     if (! capi->codeInformation)
     {
         std::cerr << "CellML Model Definition::flagVariable: missing model implementation?" << std::endl;
-        std::cerr << type << vets.size() << count << std::endl;
         return csim::UNABLE_TO_FLAG_VARIABLE;
     }
     ObjRef<iface::cellml_api::CellMLVariable> sv = findLocalVariable(capi, variableId);
@@ -251,7 +242,7 @@ int flagVariable(const std::string& variableId, unsigned char type,
         if (currentTypes & type)
         {
             std::cout << "Already flagged same type, nothing to do." << std::endl;
-            return variableIndices[sv->objid()];
+            return variableIndices[sv->objid()][type];
         }
     }
     // find corresponding computation target
@@ -317,8 +308,8 @@ int flagVariable(const std::string& variableId, unsigned char type,
         return csim::MISMATCHED_COMPUTATION_TARGET;
     }
     variableTypes[sv->objid()] = currentTypes | type;
-    variableIndices[sv->objid()] = count++;
-    return variableIndices[sv->objid()];
+    variableIndices[sv->objid()][type] = count++;
+    return variableIndices[sv->objid()][type];
 }
 
 ObjRef<iface::cellml_api::CellMLVariable> findLocalVariable(CellmlApiObjects* capi, const std::string& variableId)

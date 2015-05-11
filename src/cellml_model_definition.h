@@ -57,8 +57,7 @@ private:
     // attribute.
     //std::map<std::pair<int,int>, double> mInitialValues;
     std::map<std::string, unsigned char> mVariableTypes;
-    std::map<std::string, int> mVariableIndices;
-    std::map<std::string, int> mStateVariableIndices;
+    std::map<std::string, std::map<unsigned char, int> > mVariableIndices;
 
     int mNumberOfOutputVariables;
     int mNumberOfInputVariables;

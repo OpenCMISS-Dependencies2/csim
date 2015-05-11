@@ -50,4 +50,5 @@ TEST(Model, set_valid_io_variables) {
     EXPECT_EQ(1, model.setVariableAsOutput("main/sin2"));
     EXPECT_EQ(2, model.setVariableAsOutput("main/sin3"));
     EXPECT_EQ(2, model.setVariableAsOutput("main/sin3"));
+    EXPECT_EQ(3, model.setVariableAsOutput("main/deriv_approx_initial_value"));
 }
