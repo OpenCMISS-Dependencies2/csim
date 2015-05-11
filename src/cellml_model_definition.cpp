@@ -16,6 +16,8 @@
 #include <AnnoToolsBootstrap.hpp>
 #include <cellml-api-cxx-support.hpp>
 
+#include "csim/error_codes.h"
+
 /*
  * Prototype local methods
  */
@@ -148,7 +150,35 @@ int CellmlModelDefinition::loadModel(const std::string &url)
       std::wcerr << L"Error loading model: " << urlW << std::endl;
       return -1;
     }
-    return 0;
+    return csim::CSIM_OK;
+}
+
+int CellmlModelDefinition::setVariableAsKnown(const std::string &variableId)
+{
+    std::cout << "CellmlModelDefinition::setVariableAsKnown: flagging variable: " << variableId
+              << "; as a KNOWN variable." << std::endl;
+    std::vector<iface::cellml_services::VariableEvaluationType> vets;
+    // initially, only allow "constant" variables to be defined externally
+    vets.push_back(iface::cellml_services::CONSTANT);
+    //vets.push_back(iface::cellml_services::VARIABLE_OF_INTEGRATION);
+    //vets.push_back(iface::cellml_services::FLOATING);
+    return csim::UNABLE_TO_FLAG_VARIABLE_INPUT;
+}
+
+int CellmlModelDefinition::setVariableAsWanted(const std::string &variableId)
+{
+    std::cout << "CellmlModelDefinition::setVariableAsKnown: flagging variable: " << variableId
+              << "; as a WANTED variable." << std::endl;
+    std::vector<iface::cellml_services::VariableEvaluationType> vets;
+    // state variables should be flagged if they need to be copied into the wanted array
+    vets.push_back(iface::cellml_services::STATE_VARIABLE);
+    vets.push_back(iface::cellml_services::PSEUDOSTATE_VARIABLE);
+    vets.push_back(iface::cellml_services::ALGEBRAIC);
+    //vets.push_back(iface::cellml_services::LOCALLY_BOUND);
+    // we need to allow constant variables to be flagged as wanted since if it is a model with no
+    // differential equations then all algebraic variables will be constant - i.e., constitutive laws
+    vets.push_back(iface::cellml_services::CONSTANT);
+    return csim::UNABLE_TO_FLAG_VARIABLE_OUTPUT;
 }
 
 std::wstring s2ws(const std::string& str)

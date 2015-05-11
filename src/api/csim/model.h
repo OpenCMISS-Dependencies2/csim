@@ -58,6 +58,30 @@ public:
      */
      int loadCellmlModel(const std::string& url);
 
+     /**
+      * Flag the specified variable as being an input for the purposes of code generation. This implies
+      * that the variable will have its value set externally to the CellML model. Variables flagged as inputs will be
+      * used via the INPUT array in this model's executable function. Attempting to flag a variable after
+      * this CellML model has been instantiated into executable code will raise an error.
+      * @param variableId The ID of the variable to set as known. This string should be in the format
+      * 'component_name/variable_name'.
+      * @return On success, the index of this variable in the executable function's INPUT array (>= 0). On error, a
+      * negative status code will be returned.
+      */
+     int setVariableAsInput(const std::string& variableId);
+
+     /**
+      * Flag the specified variable as being an output for the purposes of code generation. This implies
+      * that the variable will have its value used externally to the CellML model and result in the given variable
+      * having an entry in the OUTPUT array in this model's executable function. Attempting to flag a variable after
+      * this CellML model has been instantiated into executable code will raise an error.
+      * @param variableId The ID of the variable to set as known. This string should be in the format
+      * 'component_name/variable_name'.
+      * @return On success, the index of this variable in the executable function's OUTPUT array (>= 0). On error, a
+      * negative status code will be returned.
+      */
+     int setVariableAsOutput(const std::string& variableId);
+
     /**
      * Check if this model is able to be compiled into an executable form.
      * @return True if a suitable CellML model has been loaded; false otherwise.

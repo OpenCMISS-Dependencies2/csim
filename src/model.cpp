@@ -56,6 +56,24 @@ int Model::loadCellmlModel(const std::string &url)
     return CSIM_OK;
 }
 
+int Model::setVariableAsInput(const std::string& variableId)
+{
+    if (! mModelDefinition) return MISSING_MODEL_DEFINTION;
+    // TODO: need to check that we are using a CellML model...
+    CellmlModelDefinition* cellml = static_cast<CellmlModelDefinition*>(mModelDefinition);
+    int inputIndex = cellml->setVariableAsKnown(variableId);
+    return inputIndex;
+}
+
+int Model::setVariableAsOutput(const std::string& variableId)
+{
+    if (! mModelDefinition) return MISSING_MODEL_DEFINTION;
+    // TODO: need to check that we are using a CellML model...
+    CellmlModelDefinition* cellml = static_cast<CellmlModelDefinition*>(mModelDefinition);
+    int outputIndex = cellml->setVariableAsWanted(variableId);
+    return outputIndex;
+}
+
 bool Model::isModelInstantiated() const
 {
     if (mModelDefinition) return true;

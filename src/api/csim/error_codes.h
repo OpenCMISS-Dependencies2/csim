@@ -25,7 +25,10 @@ namespace csim {
 enum ErrorCodes
 {
     CSIM_OK = 0,
-    UNABLE_TO_LOAD_MODEL_URL = 1,
+    UNABLE_TO_LOAD_MODEL_URL = -2,
+    MISSING_MODEL_DEFINTION = -3,
+    UNABLE_TO_FLAG_VARIABLE_INPUT = -4,
+    UNABLE_TO_FLAG_VARIABLE_OUTPUT = -5,
     UNKNOWN_ERROR = -1
 };
 
