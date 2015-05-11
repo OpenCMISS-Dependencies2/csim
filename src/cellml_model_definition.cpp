@@ -23,6 +23,14 @@
  */
 static std::wstring s2ws(const std::string& str);
 static std::string ws2s(const std::wstring& wstr);
+static int flagVariable(const std::string& variableId, int type,
+                        std::vector<iface::cellml_services::VariableEvaluationType> vets, int& count,
+                        CellmlApiObjects* capi,
+                        std::map<std::string, int>& variableTypes,
+                        std::map<std::string, int>& mVariableIndices);
+static ObjRef<iface::cellml_api::CellMLVariable> findLocalVariable(CellmlApiObjects* capi, const std::string& variableId);
+typedef std::pair<std::string, std::string> CVpair;
+static CVpair splitName(const std::string& s);
 
 #define StateType 1
 #define InputType 2
@@ -162,7 +170,9 @@ int CellmlModelDefinition::setVariableAsInput(const std::string &variableId)
     vets.push_back(iface::cellml_services::CONSTANT);
     //vets.push_back(iface::cellml_services::VARIABLE_OF_INTEGRATION);
     //vets.push_back(iface::cellml_services::FLOATING);
-    return csim::UNABLE_TO_FLAG_VARIABLE_INPUT;
+    int index = flagVariable(variableId, InputType, vets, mNumberOfInputVariables, mCapi,
+                             mVariableTypes, mVariableIndices);
+    return index;
 }
 
 int CellmlModelDefinition::setVariableAsOutput(const std::string &variableId)
@@ -178,7 +188,9 @@ int CellmlModelDefinition::setVariableAsOutput(const std::string &variableId)
     // we need to allow constant variables to be flagged as wanted since if it is a model with no
     // differential equations then all algebraic variables will be constant - i.e., constitutive laws
     vets.push_back(iface::cellml_services::CONSTANT);
-    return csim::UNABLE_TO_FLAG_VARIABLE_OUTPUT;
+    int index = flagVariable(variableId, OutputType, vets, mNumberOfOutputVariables,
+                             mCapi, mVariableTypes, mVariableIndices);
+    return index;
 }
 
 std::wstring s2ws(const std::string& str)
@@ -194,3 +206,153 @@ std::string ws2s(const std::wstring& wstr)
     std::wstring_convert<convert_typeX, wchar_t> converterX;
     return converterX.to_bytes(wstr);
 }
+
+int flagVariable(const std::string& variableId, int type,
+                 std::vector<iface::cellml_services::VariableEvaluationType> vets, int& count,
+                 CellmlApiObjects* capi, std::map<std::string, int>& variableTypes,
+                 std::map<std::string, int>& variableIndices)
+{
+    if (! capi->codeInformation)
+    {
+        std::cerr << "CellML Model Definition::flagVariable: missing model implementation?" << std::endl;
+        std::cerr << type << vets.size() << count << std::endl;
+        return csim::UNABLE_TO_FLAG_VARIABLE;
+    }
+    ObjRef<iface::cellml_api::CellMLVariable> sv = findLocalVariable(capi, variableId);
+    if (!sv)
+    {
+        std::cerr << "CellML Model Definition::flagVariable: unable to find source variable for: "
+                  << variableId << std::endl;
+        return csim::UNABLE_TO_FLAG_VARIABLE;
+    }
+    // check if source is already marked as known - what to do? safe to continue with no error
+    std::map<std::string, int>::iterator currentAnnotation = variableTypes.find(sv->objid());
+    if (currentAnnotation != variableTypes.end())
+    {
+        if ((*currentAnnotation).second == type)
+        {
+            std::cout << "Already flagged same type, nothing to do." << std::endl;
+            return variableIndices[sv->objid()];
+        }
+        else
+        {
+            std::cerr << "CellMLModelDefinition::flagVariable -- variable already flagged something else: "
+                      << variableId << std::endl;
+            return csim::CONFLICTING_VARIABLE_FLAG_REQUEST;
+        }
+    }
+    // find corresponding computation target
+    ObjRef<iface::cellml_services::ComputationTargetIterator> cti =
+            capi->codeInformation->iterateTargets();
+    ObjRef<iface::cellml_services::ComputationTarget> ct(NULL);
+    while(true)
+    {
+        ct = cti->nextComputationTarget();
+        if (ct == NULL) break;
+        if (ct->variable() == sv) break;
+    }
+    if (!ct)
+    {
+        std::cerr << "CellMLModelDefinition::flagVariable -- unable get computation target for the source of variable: "
+                  << variableId << std::endl;
+        return csim::NO_MATCHING_COMPUTATION_TARGET;
+    }
+
+    // check type of computation target and make sure compatible
+    unsigned int i,compatible = 0;
+    for (i=0; i<vets.size(); i++)
+    {
+        if (ct->type() == vets[i])
+        {
+            compatible = 1;
+            break;
+        }
+    }
+    if (!compatible)
+    {
+        std::cerr << "CellMLModelDefinition::flagVariable -- computation target for variable: "
+                  << variableId << "; is the wrong type to be flagged" << std::endl;
+        std::cerr << "Computation target for this source variable is: ";
+        switch (ct->type())
+        {
+        case iface::cellml_services::CONSTANT:
+            std::cerr << "CONSTANT";
+            break;
+        case iface::cellml_services::VARIABLE_OF_INTEGRATION:
+            std::cerr << "VARIABLE_OF_INTEGRATION";
+            break;
+        case iface::cellml_services::STATE_VARIABLE:
+            std::cerr << "STATE_VARIABLE";
+            break;
+        case iface::cellml_services::PSEUDOSTATE_VARIABLE:
+            std::cerr << "PSEUDOSTATE_VARIABLE";
+            break;
+        case iface::cellml_services::ALGEBRAIC:
+            std::cerr << "ALGEBRAIC";
+            break;
+        case iface::cellml_services::LOCALLY_BOUND:
+            std::cerr << "LOCALLY_BOUND";
+            break;
+        case iface::cellml_services::FLOATING:
+            std::cerr << "FLOATING";
+            break;
+        default:
+            std::cerr << "Invalid";
+        }
+        std::cerr << std::endl;
+        ct->release_ref();
+        return csim::MISMATCHED_COMPUTATION_TARGET;
+    }
+    variableTypes[sv->objid()] = type;
+    variableIndices[sv->objid()] = count++;
+    return variableIndices[sv->objid()];
+}
+
+ObjRef<iface::cellml_api::CellMLVariable> findLocalVariable(CellmlApiObjects* capi, const std::string& variableId)
+{
+    if (!(capi->cevas))
+    {
+        std::cerr << "CellMLModelDefinition::findLocalVariable -- missing CeVAS object?" << std::endl;
+        return NULL;
+    }
+    // find named variable - in local components only!
+    CVpair cv = splitName(variableId);
+    if ((cv.first.length() == 0) || (cv.second.length() == 0)) return NULL;
+    //std::cout << "Component name: " << cv.first << "; variable name: " << cv.second << std::endl;
+    ObjRef<iface::cellml_api::CellMLComponentSet> components = capi->model->localComponents();
+    ObjRef<iface::cellml_api::CellMLComponent> component = components->getComponent(s2ws(cv.first));
+    if (!component)
+    {
+        std::cerr << "CellMLModelDefinition::findLocalVariable -- unable to find local component: " << cv.first << std::endl;
+        return NULL;
+    }
+    ObjRef<iface::cellml_api::CellMLVariableSet> variables = component->variables();
+    ObjRef<iface::cellml_api::CellMLVariable> variable = variables->getVariable(s2ws(cv.second));
+    if (!variable)
+    {
+        std::cerr << "CellMLModelDefinition::findLocalVariable -- unable to find variable: " << cv.first << " / "
+                  << cv.second << std::endl;
+        return NULL;
+    }
+    // get source variable
+    ObjRef<iface::cellml_services::ConnectedVariableSet> cvs = capi->cevas->findVariableSet(variable);
+    ObjRef<iface::cellml_api::CellMLVariable> v = cvs->sourceVariable();
+    if (!v)
+    {
+        std::cerr << "CellMLModelDefinition::findLocalVariable -- unable get source variable for variable: "
+                  << cv.first << " / " << cv.second << std::endl;
+        return NULL;
+    }
+    return v;
+}
+
+CVpair splitName(const std::string& s)
+{
+    CVpair p;
+    std::size_t pos = s.find('/');
+    if (pos == std::string::npos) return p;
+    p.first = s.substr(0, pos);
+    p.second = s.substr(pos+1);
+    return p;
+}
+
