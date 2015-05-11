@@ -23,19 +23,28 @@
  */
 static std::wstring s2ws(const std::string& str);
 static std::string ws2s(const std::wstring& wstr);
-static int flagVariable(const std::string& variableId, int type,
-                        std::vector<iface::cellml_services::VariableEvaluationType> vets, int& count,
-                        CellmlApiObjects* capi,
-                        std::map<std::string, int>& variableTypes,
+static int flagVariable(const std::string& variableId, unsigned char type,
+                        std::vector<iface::cellml_services::VariableEvaluationType> vets,
+                        int& count, CellmlApiObjects* capi,
+                        std::map<std::string, unsigned char>& variableTypes,
                         std::map<std::string, int>& mVariableIndices);
 static ObjRef<iface::cellml_api::CellMLVariable> findLocalVariable(CellmlApiObjects* capi, const std::string& variableId);
 typedef std::pair<std::string, std::string> CVpair;
 static CVpair splitName(const std::string& s);
 
-#define StateType 1
-#define InputType 2
-#define OutputType 3
-#define IndependentType 4
+/**
+ * In order to be flexible in allowing a single variable to be multiple types (state
+ * and output; input and output; etc.) we use these bit flags.
+ * http://www.cplusplus.com/forum/general/1590/
+ */
+enum VariableTypes {
+    StateType        = 0x01,
+    InputType        = 0x02,
+    OutputType       = 0x04,
+    IndependentType  = 0x08,
+  //OpFullscreen    = 0x10,
+  //OpDaylight      = 0x20
+};
 
 class CellmlApiObjects
 {
@@ -135,7 +144,7 @@ int CellmlModelDefinition::loadModel(const std::string &url)
                                         ));
                     } catch (...) {}*/
                     mVariableTypes[v->objid()] = StateType;
-                    mVariableIndices[v->objid()] = mStateCounter;
+                    mStateVariableIndices[v->objid()] = mStateCounter;
                     mStateCounter++;
                 }
                 else if (ct->type() == iface::cellml_services::VARIABLE_OF_INTEGRATION)
@@ -170,7 +179,8 @@ int CellmlModelDefinition::setVariableAsInput(const std::string &variableId)
     vets.push_back(iface::cellml_services::CONSTANT);
     //vets.push_back(iface::cellml_services::VARIABLE_OF_INTEGRATION);
     //vets.push_back(iface::cellml_services::FLOATING);
-    int index = flagVariable(variableId, InputType, vets, mNumberOfInputVariables, mCapi,
+    int index = flagVariable(variableId, InputType, vets,
+                             mNumberOfInputVariables, mCapi,
                              mVariableTypes, mVariableIndices);
     return index;
 }
@@ -188,8 +198,9 @@ int CellmlModelDefinition::setVariableAsOutput(const std::string &variableId)
     // we need to allow constant variables to be flagged as wanted since if it is a model with no
     // differential equations then all algebraic variables will be constant - i.e., constitutive laws
     vets.push_back(iface::cellml_services::CONSTANT);
-    int index = flagVariable(variableId, OutputType, vets, mNumberOfOutputVariables,
-                             mCapi, mVariableTypes, mVariableIndices);
+    int index = flagVariable(variableId, OutputType, vets,
+                             mNumberOfOutputVariables, mCapi, mVariableTypes,
+                             mVariableIndices);
     return index;
 }
 
@@ -207,9 +218,10 @@ std::string ws2s(const std::wstring& wstr)
     return converterX.to_bytes(wstr);
 }
 
-int flagVariable(const std::string& variableId, int type,
-                 std::vector<iface::cellml_services::VariableEvaluationType> vets, int& count,
-                 CellmlApiObjects* capi, std::map<std::string, int>& variableTypes,
+int flagVariable(const std::string& variableId, unsigned char type,
+                 std::vector<iface::cellml_services::VariableEvaluationType> vets,
+                 int& count, CellmlApiObjects* capi,
+                 std::map<std::string, unsigned char>& variableTypes,
                  std::map<std::string, int>& variableIndices)
 {
     if (! capi->codeInformation)
@@ -225,20 +237,21 @@ int flagVariable(const std::string& variableId, int type,
                   << variableId << std::endl;
         return csim::UNABLE_TO_FLAG_VARIABLE;
     }
-    // check if source is already marked as known - what to do? safe to continue with no error
-    std::map<std::string, int>::iterator currentAnnotation = variableTypes.find(sv->objid());
+
+    // FIXME: here we simply accept any flag combination. Code generation is the place
+    // where flags will be checked for consistency?
+
+    // check if source is already flagged with the specified type.
+    std::map<std::string, unsigned char>::iterator currentAnnotation =
+            variableTypes.find(sv->objid());
+    unsigned char currentTypes;
     if (currentAnnotation != variableTypes.end())
     {
-        if ((*currentAnnotation).second == type)
+        currentTypes = currentAnnotation->second;
+        if (currentTypes & type)
         {
             std::cout << "Already flagged same type, nothing to do." << std::endl;
             return variableIndices[sv->objid()];
-        }
-        else
-        {
-            std::cerr << "CellMLModelDefinition::flagVariable -- variable already flagged something else: "
-                      << variableId << std::endl;
-            return csim::CONFLICTING_VARIABLE_FLAG_REQUEST;
         }
     }
     // find corresponding computation target
@@ -303,7 +316,7 @@ int flagVariable(const std::string& variableId, int type,
         ct->release_ref();
         return csim::MISMATCHED_COMPUTATION_TARGET;
     }
-    variableTypes[sv->objid()] = type;
+    variableTypes[sv->objid()] = currentTypes | type;
     variableIndices[sv->objid()] = count++;
     return variableIndices[sv->objid()];
 }
