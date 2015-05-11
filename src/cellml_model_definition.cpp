@@ -25,8 +25,8 @@ static std::wstring s2ws(const std::string& str);
 static std::string ws2s(const std::wstring& wstr);
 
 #define StateType 1
-#define KnownType 2
-#define WantedType 3
+#define InputType 2
+#define OutputType 3
 #define IndependentType 4
 
 class CellmlApiObjects
@@ -41,8 +41,8 @@ public:
 CellmlModelDefinition::CellmlModelDefinition() : mUrl(""), mModelLoaded(false), mCapi(0)
 {
     mNumberOfIndependentVariables = 0;
-    mNumberOfKnownVariables = 0;
-    mNumberOfWantedVariables = 0;
+    mNumberOfInputVariables = 0;
+    mNumberOfOutputVariables = 0;
     mStateCounter = 0;
 }
 
@@ -109,7 +109,7 @@ int CellmlModelDefinition::loadModel(const std::string &url)
                 return -5;
             }
             mCapi->codeInformation = cci;
-            // and add all state variables as wanted and the variable of integration as known
+            // and add all state variables as output and the variable of integration as input
             ObjRef<iface::cellml_services::ComputationTargetIterator> cti = cci->iterateTargets();
             while (true)
             {
@@ -153,10 +153,10 @@ int CellmlModelDefinition::loadModel(const std::string &url)
     return csim::CSIM_OK;
 }
 
-int CellmlModelDefinition::setVariableAsKnown(const std::string &variableId)
+int CellmlModelDefinition::setVariableAsInput(const std::string &variableId)
 {
-    std::cout << "CellmlModelDefinition::setVariableAsKnown: flagging variable: " << variableId
-              << "; as a KNOWN variable." << std::endl;
+    std::cout << "CellmlModelDefinition::setVariableAsInput: flagging variable: " << variableId
+              << "; as a INPUT variable." << std::endl;
     std::vector<iface::cellml_services::VariableEvaluationType> vets;
     // initially, only allow "constant" variables to be defined externally
     vets.push_back(iface::cellml_services::CONSTANT);
@@ -165,10 +165,10 @@ int CellmlModelDefinition::setVariableAsKnown(const std::string &variableId)
     return csim::UNABLE_TO_FLAG_VARIABLE_INPUT;
 }
 
-int CellmlModelDefinition::setVariableAsWanted(const std::string &variableId)
+int CellmlModelDefinition::setVariableAsOutput(const std::string &variableId)
 {
-    std::cout << "CellmlModelDefinition::setVariableAsKnown: flagging variable: " << variableId
-              << "; as a WANTED variable." << std::endl;
+    std::cout << "CellmlModelDefinition::setVariableAsOutput: flagging variable: " << variableId
+              << "; as a OUTPUT variable." << std::endl;
     std::vector<iface::cellml_services::VariableEvaluationType> vets;
     // state variables should be flagged if they need to be copied into the wanted array
     vets.push_back(iface::cellml_services::STATE_VARIABLE);

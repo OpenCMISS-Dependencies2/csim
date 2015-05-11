@@ -61,7 +61,7 @@ int Model::setVariableAsInput(const std::string& variableId)
     if (! mModelDefinition) return MISSING_MODEL_DEFINTION;
     // TODO: need to check that we are using a CellML model...
     CellmlModelDefinition* cellml = static_cast<CellmlModelDefinition*>(mModelDefinition);
-    int inputIndex = cellml->setVariableAsKnown(variableId);
+    int inputIndex = cellml->setVariableAsInput(variableId);
     return inputIndex;
 }
 
@@ -70,7 +70,7 @@ int Model::setVariableAsOutput(const std::string& variableId)
     if (! mModelDefinition) return MISSING_MODEL_DEFINTION;
     // TODO: need to check that we are using a CellML model...
     CellmlModelDefinition* cellml = static_cast<CellmlModelDefinition*>(mModelDefinition);
-    int outputIndex = cellml->setVariableAsWanted(variableId);
+    int outputIndex = cellml->setVariableAsOutput(variableId);
     return outputIndex;
 }
 
