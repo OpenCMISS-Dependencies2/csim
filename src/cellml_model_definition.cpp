@@ -27,8 +27,16 @@ static std::string ws2s(const std::wstring& wstr);
 #define WantedType 3
 #define IndependentType 4
 
-CellmlModelDefinition::CellmlModelDefinition() : mUrl(""), mModelLoaded(false), mModel(0),
-    mAnnotations(0), mCevas(0), mCodeInformation(0)
+class CellmlApiObjects
+{
+public:
+    ObjRef<iface::cellml_api::Model> model;
+    ObjRef<iface::cellml_services::AnnotationSet> annotations;
+    ObjRef<iface::cellml_services::CeVAS> cevas;
+    ObjRef<iface::cellml_services::CodeInformation> codeInformation;
+};
+
+CellmlModelDefinition::CellmlModelDefinition() : mUrl(""), mModelLoaded(false), mCapi(0)
 {
     mNumberOfIndependentVariables = 0;
     mNumberOfKnownVariables = 0;
@@ -38,28 +46,10 @@ CellmlModelDefinition::CellmlModelDefinition() : mUrl(""), mModelLoaded(false), 
 
 CellmlModelDefinition::~CellmlModelDefinition()
 {
-    if (mModel)
+    if (mCapi)
     {
-        iface::cellml_api::Model* el = static_cast<iface::cellml_api::Model*>(mModel);
-        el->release_ref();
-    }
-    if (mAnnotations)
-    {
-        iface::cellml_services::AnnotationSet* el =
-                static_cast<iface::cellml_services::AnnotationSet*>(mAnnotations);
-        el->release_ref();
-    }
-    if (mCevas)
-    {
-        iface::cellml_services::CeVAS* el =
-                static_cast<iface::cellml_services::CeVAS*>(mCevas);
-        el->release_ref();
-    }
-    if (mCodeInformation)
-    {
-        iface::cellml_services::CodeInformation* el =
-                static_cast<iface::cellml_services::CodeInformation*>(mCodeInformation);
-        el->release_ref();
+        delete mCapi;
+        mCapi = NULL;
     }
 }
 
@@ -76,13 +66,13 @@ int CellmlModelDefinition::loadModel(const std::string &url)
     {
         ObjRef<iface::cellml_api::Model> model = ml->loadFromURL(urlW);
         model->fullyInstantiateImports();
-        model->add_ref();
-        mModel = static_cast<void*>(model);
+        // we have a model, so we can start grabbing hold of the CellML API objects
+        mCapi = new CellmlApiObjects();
+        mCapi->model = model;
         // create an annotation set to manage our variable usages
         ObjRef<iface::cellml_services::AnnotationToolService> ats = CreateAnnotationToolService();
         ObjRef<iface::cellml_services::AnnotationSet> as = ats->createAnnotationSet();
-        as->add_ref();
-        mAnnotations = static_cast<void*>(as);
+        mCapi->annotations = as;
         // mapping the connections between variables is a very expensive operation, so we want to
         // only do it once and keep hold of the mapping (tracker item 3294)
         ObjRef<iface::cellml_services::CeVASBootstrap> cvbs = CreateCeVASBootstrap();
@@ -94,8 +84,7 @@ int CellmlModelDefinition::loadModel(const std::string &url)
                       << ws2s(msg) << std::endl;
             return -2;
         }
-        cevas->add_ref();
-        mCevas = static_cast<void*>(cevas);
+        mCapi->cevas = cevas;
         // now check we can generate code and grab hold of the initial code information
         ObjRef<iface::cellml_services::CodeGeneratorBootstrap> cgb = CreateCodeGeneratorBootstrap();
         ObjRef<iface::cellml_services::CodeGenerator> cg = cgb->createCodeGenerator();
@@ -117,8 +106,7 @@ int CellmlModelDefinition::loadModel(const std::string &url)
                           << std::endl;
                 return -5;
             }
-            cci->add_ref();
-            mCodeInformation = static_cast<void*>(cci);
+            mCapi->codeInformation = cci;
             // and add all state variables as wanted and the variable of integration as known
             ObjRef<iface::cellml_services::ComputationTargetIterator> cti = cci->iterateTargets();
             while (true)
@@ -128,14 +116,14 @@ int CellmlModelDefinition::loadModel(const std::string &url)
                 ObjRef<iface::cellml_api::CellMLVariable> v(ct->variable());
                 if (ct->type() == iface::cellml_services::STATE_VARIABLE)
                 {
-                    try
+                    /*try
                     {
                         if (v->initialValue() != L"") mInitialValues.insert(
                                     std::pair<std::pair<int,int>, double>(
                                         std::pair<int,int>(StateType, mStateCounter),
                                         v->initialValueValue()
                                         ));
-                    } catch (...) {}
+                    } catch (...) {}*/
                     mVariableTypes[v->objid()] = StateType;
                     mVariableIndices[v->objid()] = mStateCounter;
                     mStateCounter++;
@@ -152,14 +140,12 @@ int CellmlModelDefinition::loadModel(const std::string &url)
             std::cerr << "loadModel: Error generating the code information for the model" << std::endl;
             return -3;
         }
-
         // if we get to here, everything worked.
         mModelLoaded = true;
     }
     catch (...)
     {
       std::wcerr << L"Error loading model: " << urlW << std::endl;
-      mModel = static_cast<void*>(NULL);
       return -1;
     }
     return 0;
