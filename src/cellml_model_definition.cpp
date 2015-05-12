@@ -304,7 +304,6 @@ int flagVariable(const std::string& variableId, unsigned char type,
             std::cerr << "Invalid";
         }
         std::cerr << std::endl;
-        ct->release_ref();
         return csim::MISMATCHED_COMPUTATION_TARGET;
     }
     variableTypes[sv->objid()] = currentTypes | type;
