@@ -196,6 +196,11 @@ int CellmlModelDefinition::setVariableAsOutput(const std::string &variableId)
     return index;
 }
 
+int CellmlModelDefinition::instantiate()
+{
+    return csim::NOT_IMPLEMENTED;
+}
+
 std::wstring s2ws(const std::string& str)
 {
     typedef std::codecvt_utf8<wchar_t> convert_typeX;

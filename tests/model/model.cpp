@@ -8,7 +8,7 @@
 
 TEST(Model, new_model) {
     csim::Model model;
-    EXPECT_FALSE(model.isModelInstantiated());
+    EXPECT_FALSE(model.isInstantiated());
 }
 
 TEST(Model, load_nonexisting_model) {
@@ -72,3 +72,13 @@ TEST(Model, set_invalid_io_variables) {
     EXPECT_EQ(csim::MISMATCHED_COMPUTATION_TARGET, model.setVariableAsInput("deriv_approx_sin/sin"));
 }
 
+TEST(Model, instantiation) {
+    csim::Model model;
+    EXPECT_EQ(csim::CSIM_OK,
+              model.loadCellmlModel(TestResources::getLocation(TestResources::CELLML_SINE_IMPORTS_MODEL_RESOURCE)));
+    EXPECT_EQ(0, model.setVariableAsInput("main/deriv_approx_initial_value"));
+    EXPECT_EQ(0, model.setVariableAsOutput("main/sin1"));
+    EXPECT_EQ(1, model.setVariableAsOutput("main/sin2"));
+    EXPECT_EQ(2, model.setVariableAsOutput("main/sin3"));
+    EXPECT_EQ(csim::CSIM_OK, model.instantiate());
+}

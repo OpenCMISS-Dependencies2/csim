@@ -21,13 +21,14 @@ limitations under the License.Some license of other
 
 namespace csim {
 
-Model::Model() : mModelDefinition(0)
+Model::Model() : mModelDefinition(0), mInstantiated(false)
 {
 }
 
 Model::Model(const Model &src)
 {
     mModelDefinition = src.mModelDefinition;
+    mInstantiated = src.mInstantiated;
 }
 
 Model::~Model()
@@ -74,10 +75,12 @@ int Model::setVariableAsOutput(const std::string& variableId)
     return outputIndex;
 }
 
-bool Model::isModelInstantiated() const
+int Model::instantiate()
 {
-    if (mModelDefinition) return true;
-    return false;
+    if (! mModelDefinition) return MISSING_MODEL_DEFINTION;
+    // TODO: should first check if using a CellML model...
+    CellmlModelDefinition* cellml = static_cast<CellmlModelDefinition*>(mModelDefinition);
+    return cellml->instantiate();
 }
 
 } // namespace csim

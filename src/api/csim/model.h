@@ -82,17 +82,29 @@ public:
       */
      int setVariableAsOutput(const std::string& variableId);
 
+     /**
+      * Instantiate the current model into an executable function. This method should only be called once all
+      * required inputs and outputs have been set. Once a model is instantiated, no further modifications can be made
+      * to the inputs and outputs.
+      * @return csim::CSIM_OK on success, otherwise error code.
+      */
+     int instantiate();
+
     /**
-     * Check if this model is able to be compiled into an executable form.
-     * @return True if a suitable CellML model has been loaded; false otherwise.
+     * Check if this model has been instantiated into executable code.
+     * @return True if a suitable CellML model has been loaded and instantiated; false otherwise.
      */
-     bool isModelInstantiated() const;
+     inline bool isInstantiated() const
+     {
+         return mInstantiated;
+     }
 
 private:
     /**
-     * Internal representation of the CellML model.
+     * Internal representation of a CellML model.
      */
     void* mModelDefinition;
+    bool mInstantiated;
 };
 
 } // namespace csim

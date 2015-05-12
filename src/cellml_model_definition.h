@@ -42,6 +42,13 @@ public:
      */
     int setVariableAsOutput(const std::string& variableId);
 
+    /**
+     * Instantiate this model defintion into executable coode. Will cause code to be generated and compiled into
+     * an executable function.
+     * @return CSIM_OK on success.
+     */
+    int instantiate();
+
 private:
     std::string mUrl;
     /**
