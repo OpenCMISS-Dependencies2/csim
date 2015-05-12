@@ -2,6 +2,7 @@
 #include "cellml_model_definition.h"
 
 #include <iostream>
+#include <sstream>
 #include <string>
 #include <locale>
 #include <codecvt>
@@ -27,10 +28,15 @@ static int flagVariable(const std::string& variableId, unsigned char type,
                         std::vector<iface::cellml_services::VariableEvaluationType> vets,
                         int& count, CellmlApiObjects* capi,
                         std::map<std::string, unsigned char>& variableTypes,
-                        std::map<std::string, std::map<unsigned char, int> >& mVariableIndices);
+                        std::map<std::string, std::map<unsigned char, int> >& variableIndices);
 static ObjRef<iface::cellml_api::CellMLVariable> findLocalVariable(CellmlApiObjects* capi, const std::string& variableId);
+static std::string generateCodeForModel(CellmlApiObjects* capi,
+                                        std::map<std::string, unsigned char>& variableTypes,
+                                        std::map<std::string, std::map<unsigned char, int> >& variableIndices,
+                                        int numberOfInputs, int numberOfOutputs, int numberOfStates);
 typedef std::pair<std::string, std::string> CVpair;
 static CVpair splitName(const std::string& s);
+static std::string clearCodeAssignments(const std::string& s, const std::string& array, int count);
 
 /**
  * In order to be flexible in allowing a single variable to be multiple types (state
@@ -198,7 +204,12 @@ int CellmlModelDefinition::setVariableAsOutput(const std::string &variableId)
 
 int CellmlModelDefinition::instantiate()
 {
-    return csim::NOT_IMPLEMENTED;
+    std::string codeString = generateCodeForModel(mCapi, mVariableTypes, mVariableIndices,
+                                                  mNumberOfInputVariables, mNumberOfOutputVariables,
+                                                  mStateCounter);
+    std::cout << "Code string:\n***********************\n" << codeString << "\n#####################################\n"
+              << std::endl;
+    return csim::CSIM_OK;
 }
 
 std::wstring s2ws(const std::string& str)
@@ -364,3 +375,229 @@ CVpair splitName(const std::string& s)
     return p;
 }
 
+std::string generateCodeForModel(CellmlApiObjects* capi,
+                                 std::map<std::string, unsigned char>& variableTypes,
+                                 std::map<std::string, std::map<unsigned char, int> >& variableIndices,
+                                 int numberOfInputs, int numberOfOutputs, int numberOfStates)
+{
+    std::stringstream code;
+    std::string codeString;
+    if (! (capi && capi->codeInformation))
+    {
+        std::cerr << "CellML Model Definition::generateCodeForModel: missing model implementation?" << std::endl;
+        return "";
+    }
+    // We need to regenerate the code information to make use of the flagged variables.
+    ObjRef<iface::cellml_services::CodeGeneratorBootstrap> cgb = CreateCodeGeneratorBootstrap();
+    ObjRef<iface::cellml_services::CodeGenerator> cg = cgb->createCodeGenerator();
+    // catch any exceptions from the CellML API
+    try
+    {
+        // annotate the source variables in the model with the code-names based on existing annotations
+        for (unsigned int i=0; i < capi->cevas->length(); i++)
+        {
+            ObjRef<iface::cellml_services::ConnectedVariableSet> cvs = capi->cevas->getVariableSet(i);
+            ObjRef<iface::cellml_api::CellMLVariable> sv = cvs->sourceVariable();
+            std::string currentId = sv->objid();
+            std::map<std::string, unsigned char>::iterator typeit(variableTypes.find(currentId));
+            if (typeit != variableTypes.end())
+            {
+                std::wstringstream ename;
+                // here we assign an array and index based on the "primary" purpose of the variable. Later
+                // we will add in secondary purposes.
+                unsigned char vType = typeit->second;
+                if (vType & StateType)
+                {
+                    ename << L"CSIM_STATE[" << variableIndices[currentId][StateType] << L"]";
+                }
+                else if (vType & IndependentType)
+                {
+                    // do nothing, but stop input and output annotations
+                }
+                else if (vType & InputType)
+                {
+                    ename << L"CSIM_INPUT[" << variableIndices[currentId][InputType] << L"]";
+                }
+                else if (vType & OutputType)
+                {
+                    ename << L"CSIM_OUTPUT[" << variableIndices[currentId][OutputType] << L"]";
+                }
+                capi->annotations->setStringAnnotation(sv, L"expression", ename.str());
+
+                if (vType & StateType)
+                {
+                    ename.str(L"");
+                    ename.clear();
+                    ename << L"CSIM_RATE[" << variableIndices[currentId][StateType] << L"]";
+                    capi->annotations->setStringAnnotation(sv, L"expression_d1", ename.str());
+                }
+            }
+        }
+        cg->useCeVAS(capi->cevas);
+        cg->useAnnoSet(capi->annotations);
+        ObjRef<iface::cellml_services::CodeInformation> cci = cg->generateCode(capi->model);
+        std::wstring m = cci->errorMessage();
+        if (m != L"")
+        {
+            std::cerr << "CellML Model Definition::generateCodeForModel: error generating code?" << std::endl;
+            return "";
+        }
+        iface::cellml_services::ModelConstraintLevel mcl = cci->constraintLevel();
+        if (mcl == iface::cellml_services::UNDERCONSTRAINED)
+        {
+            std::cerr << "Model is underconstrained" << std::endl;
+            return "";
+        }
+        else if (mcl == iface::cellml_services::OVERCONSTRAINED)
+        {
+            std::cerr << "Model is overconstrained" << std::endl;
+            return "";
+        }
+        else if (mcl == iface::cellml_services::UNSUITABLY_CONSTRAINED)
+        {
+            std::cerr << "Model is unsuitably constrained" << std::endl;
+            return "";
+        }
+        std::cout << "Model is correctly constrained" << std::endl;
+        // create the code in the format we know how to handle
+        code << "#include <math.h>\n"
+             << "#include <stdio.h>\n"
+        /* required functions */
+             << "extern double fabs(double x);\n"
+             << "extern double acos(double x);\n"
+             << "extern double acosh(double x);\n"
+             << "extern double atan(double x);\n"
+             << "extern double atanh(double x);\n"
+             << "extern double asin(double x);\n"
+             << "extern double asinh(double x);\n"
+             << "extern double acos(double x);\n"
+             << "extern double acosh(double x);\n"
+             << "extern double asin(double x);\n"
+             << "extern double asinh(double x);\n"
+             << "extern double atan(double x);\n"
+             << "extern double atanh(double x);\n"
+             << "extern double ceil(double x);\n"
+             << "extern double cos(double x);\n"
+             << "extern double cosh(double x);\n"
+             << "extern double tan(double x);\n"
+             << "extern double tanh(double x);\n"
+             << "extern double sin(double x);\n"
+             << "extern double sinh(double x);\n"
+             << "extern double exp(double x);\n"
+             << "extern double floor(double x);\n"
+             << "extern double pow(double x, double y);\n"
+             << "extern double factorial(double x);\n"
+             << "extern double log(double x);\n"
+             << "extern double arbitrary_log(double x, double base);\n"
+             << "extern double gcd_pair(double a, double b);\n"
+             << "extern double lcm_pair(double a, double b);\n"
+             << "extern double gcd_multi(unsigned int size, ...);\n"
+             << "extern double lcm_multi(unsigned int size, ...);\n"
+             << "extern double multi_min(unsigned int size, ...);\n"
+             << "extern double multi_max(unsigned int size, ...);\n"
+             << "extern void NR_MINIMISE(double(*func)"
+                "(double VOI, double *C, double *R, double *S, double *A),"
+                "double VOI, double *C, double *R, double *S, double *A, "
+                "double *V);\n";
+        std::wstring frag = cci->functionsString();
+        code << ws2s(frag);
+
+        int nAlgebraic = cci->algebraicIndexCount();
+        int nConstants = cci->constantIndexCount();
+
+        code << "\n\nvoid csim_rhs_routine(double VOI, double* CSIM_STATE, double* CSIM_RATE, double* CSIM_OUTPUT, double* CSIM_INPUT)\n{\n\n"
+             << "double DUMMY_ASSIGNMENT;\n"
+             << "double CONSTANTS["
+             << nConstants
+             << "], ALGEBRAIC["
+             << nAlgebraic
+             << "];\n\n";
+
+        /* initConsts - all variables which aren't state variables but have
+         *              an initial_value attribute, and any variables & rates
+         *              which follow.
+         */
+        code << ws2s(cci->initConstsString());
+
+        /* rates      - All rates which are not static.
+         */
+        code << ws2s(cci->ratesString());
+
+        /* variables  - All variables not computed by initConsts or rates
+         *  (i.e., these are not required for the integration of the model and
+         *   thus only need to be called for output or presentation or similar
+         *   purposes)
+         */
+        code << ws2s(cci->variablesString());
+
+        // add in the setting of any outputs that are not already defined
+        for (unsigned int i=0; i < capi->cevas->length(); i++)
+        {
+            ObjRef<iface::cellml_services::ConnectedVariableSet> cvs = capi->cevas->getVariableSet(i);
+            ObjRef<iface::cellml_api::CellMLVariable> sv = cvs->sourceVariable();
+            std::string currentId = sv->objid();
+            std::map<std::string, unsigned char>::iterator typeit(variableTypes.find(currentId));
+            if (typeit != variableTypes.end())
+            {
+                unsigned char vType = typeit->second;
+                if (vType & OutputType)
+                {
+                    if (vType & StateType)
+                        code << "CSIM_OUTPUT[" << variableIndices[currentId][OutputType]
+                                << "] = CSIM_STATE[" << variableIndices[currentId][StateType]
+                                   << "];\n";
+                    else if (vType & InputType)
+                        code << "CSIM_OUTPUT[" << variableIndices[currentId][OutputType]
+                                << "] = CSIM_INPUT[" << variableIndices[currentId][InputType]
+                                   << "];\n";
+                    else if (vType & IndependentType)
+                        code << "CSIM_OUTPUT[" << variableIndices[currentId][OutputType]
+                                << "] = VOI;\n";
+                }
+            }
+        }
+
+        // close the subroutine
+        code << "\n\n}//csim_rhs_routine()\n\n";
+
+        code << numberOfOutputs;
+
+        // and now clear out initialisation of state variables and known variables from
+        // the RHS routine.
+        codeString = clearCodeAssignments(code.str(), "CSIM_STATE", numberOfStates);
+        codeString = clearCodeAssignments(codeString, "CSIM_INPUT", numberOfInputs);
+
+        // and finally create the initialisation routine
+        std::stringstream initRoutine;
+        initRoutine << "\nvoid csim_initialise_routine(double* CSIM_STATE, double* CSIM_INPUT)\n{\n";
+        initRoutine << "double CONSTANTS[" << nConstants << "];\n";
+        initRoutine << ws2s(cci->initConstsString());
+        initRoutine << "\n}\n";
+
+        codeString += initRoutine.str();
+    }
+    catch (...)
+    {
+        std::cerr << "CellML Model Definition::generateCodeForModel: something went wrong generating code?" << std::endl;
+        return "";
+    }
+    return codeString;
+}
+
+std::string clearCodeAssignments(const std::string& s, const std::string& array, int count)
+{
+    std::string code(s);
+    for (int i=0; i < count; i++)
+    {
+        std::stringstream search;
+        search << array;
+        search << "[" << i << "]";
+        std::string r("DUMMY_ASSIGNMENT /*");
+        r += search.str();
+        search << " = ";
+        r += "*/ = ";
+        if (code.find(search.str()) != std::string::npos)
+            code.replace(code.find(search.str()), search.str().size(), r);
+    }
+    return code;
+}
