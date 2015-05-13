@@ -35,6 +35,82 @@ configure_file(
 
 FIND_PACKAGE(CellML REQUIRED)
 
+# Since LLVM 3.5 the cmake files are available in the releases, so consolidate on the "cmake" method now.
+find_package(LLVM REQUIRED CONFIG)
+message(STATUS "Found LLVM ${LLVM_PACKAGE_VERSION}")
+message(STATUS "Using LLVMConfig.cmake in: ${LLVM_DIR}")
+
+llvm_map_components_to_libnames(REQ_LLVM_LIBRARIES
+    instrumentation
+    mcjit
+    interpreter
+    x86codegen
+    asmparser
+    bitwriter
+    ipo
+    option
+    irreader
+    linker
+    runtimedyld
+    executionengine
+    asmprinter
+    selectiondag
+    objcarcopts
+    x86desc
+    mcparser
+    codegen
+    x86info
+    bitreader
+    scalaropts
+    x86utils
+    instcombine
+    transformutils
+    ipa
+    analysis
+    target
+    vectorize
+    core
+    mc
+    object
+    support
+)
+
+#    if( ${OPERATING_SYSTEM} STREQUAL "linux" )
+#        SET(PLATFORM_LIBS ${PLATFORM_LIBS} "dl" "pthread" "tinfo")
+#    endif()
+
+set(REQ_CLANG_LIBNAMES
+    clangFrontend
+    clangSerialization
+    clangDriver
+    clangCodeGen
+    clangParse
+    clangSema
+    clangStaticAnalyzerFrontend
+    clangStaticAnalyzerCheckers
+    clangStaticAnalyzerCore
+    clangAnalysis
+    clangRewrite
+    clangAST
+    clangLex
+    clangBasic
+    clangEdit
+    clangLex
+)
+# Turn the clang libnames into absolute path libraries
+# llvm_map_components_to_libnames seems to do this?
+set(REQ_CLANG_LIBRARIES)
+foreach(clangLib ${REQ_CLANG_LIBNAMES})
+    find_library(foundLib_${clangLib} ${clangLib} PATHS ${LLVM_LIBRARY_DIRS})
+    list(APPEND REQ_CLANG_LIBRARIES ${foundLib_${clangLib}})
+endforeach()
+
+message("LLVM defs: ${LLVM_DEFINITIONS}")
+message("LLVM includes: ${LLVM_INCLUDE_DIRS}")
+message("LLVM lib dir: ${LLVM_LIBRARY_DIRS}")
+message("LLVM libs: ${REQ_LLVM_LIBRARIES}")
+message("Clang libs: ${REQ_CLANG_LIBRARIES}")
+
 set(SOURCE_FILES
   ${CMAKE_CURRENT_SOURCE_DIR}/version.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/model.cpp
@@ -61,6 +137,11 @@ add_library(csim
   ${API_HEADER_FILES}
 )
 
+target_compile_definitions(csim
+  PUBLIC
+  ${LLVM_DEFINITIONS}
+)
+
 target_include_directories(csim
   PUBLIC
   $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}/api>
@@ -69,11 +150,14 @@ target_include_directories(csim
   PRIVATE
   ${CMAKE_CURRENT_BINARY_DIR}
   ${CELLML_INCLUDE_DIR}
+  ${LLVM_INCLUDE_DIRS}
 )
 
 target_link_libraries(csim
   PUBLIC
   ${CELLML_LIBRARIES}
+  ${REQ_CLANG_LIBRARIES}
+  ${REQ_LLVM_LIBRARIES}
 )
 
 set_target_properties(csim PROPERTIES
