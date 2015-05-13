@@ -33,7 +33,7 @@ static ObjRef<iface::cellml_api::CellMLVariable> findLocalVariable(CellmlApiObje
 static std::string generateCodeForModel(CellmlApiObjects* capi,
                                         std::map<std::string, unsigned char>& variableTypes,
                                         std::map<std::string, std::map<unsigned char, int> >& variableIndices,
-                                        int numberOfInputs, int numberOfOutputs, int numberOfStates);
+                                        int numberOfInputs, int numberOfStates);
 typedef std::pair<std::string, std::string> CVpair;
 static CVpair splitName(const std::string& s);
 static std::string clearCodeAssignments(const std::string& s, const std::string& array, int count);
@@ -205,10 +205,11 @@ int CellmlModelDefinition::setVariableAsOutput(const std::string &variableId)
 int CellmlModelDefinition::instantiate()
 {
     std::string codeString = generateCodeForModel(mCapi, mVariableTypes, mVariableIndices,
-                                                  mNumberOfInputVariables, mNumberOfOutputVariables,
+                                                  mNumberOfInputVariables,
                                                   mStateCounter);
     std::cout << "Code string:\n***********************\n" << codeString << "\n#####################################\n"
               << std::endl;
+
     return csim::CSIM_OK;
 }
 
@@ -378,7 +379,7 @@ CVpair splitName(const std::string& s)
 std::string generateCodeForModel(CellmlApiObjects* capi,
                                  std::map<std::string, unsigned char>& variableTypes,
                                  std::map<std::string, std::map<unsigned char, int> >& variableIndices,
-                                 int numberOfInputs, int numberOfOutputs, int numberOfStates)
+                                 int numberOfInputs, int numberOfStates)
 {
     std::stringstream code;
     std::string codeString;
@@ -559,8 +560,6 @@ std::string generateCodeForModel(CellmlApiObjects* capi,
 
         // close the subroutine
         code << "\n\n}//csim_rhs_routine()\n\n";
-
-        code << numberOfOutputs;
 
         // and now clear out initialisation of state variables and known variables from
         // the RHS routine.
