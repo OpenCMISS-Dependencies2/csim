@@ -223,7 +223,7 @@ int Compiler::compileCodeString(const std::string& code)
     }
 
     // Shutdown.
-    llvm::llvm_shutdown();
+    //llvm::llvm_shutdown();
 
     return csim::CSIM_OK;
 }
