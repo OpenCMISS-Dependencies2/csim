@@ -18,7 +18,6 @@
 #include <cellml-api-cxx-support.hpp>
 
 #include "csim/error_codes.h"
-#include "compiler.h"
 
 /*
  * Prototype local methods
@@ -203,7 +202,7 @@ int CellmlModelDefinition::setVariableAsOutput(const std::string &variableId)
     return index;
 }
 
-int CellmlModelDefinition::instantiate()
+int CellmlModelDefinition::instantiate(Compiler& compiler)
 {
     std::string codeString = generateCodeForModel(mCapi, mVariableTypes, mVariableIndices,
                                                   mNumberOfInputVariables,
@@ -212,7 +211,6 @@ int CellmlModelDefinition::instantiate()
     std::cout << "Code string:\n***********************\n" << codeString << "\n#####################################\n"
               << std::endl;
     */
-    Compiler compiler(true, true);
     compiler.compileCodeString(codeString);
     return csim::CSIM_OK;
 }

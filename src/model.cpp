@@ -18,16 +18,18 @@ limitations under the License.Some license of other
 #include "csim/model.h"
 #include "csim/error_codes.h"
 #include "cellml_model_definition.h"
+#include "compiler.h"
 
 namespace csim {
 
-Model::Model() : mModelDefinition(0), mInstantiated(false)
+Model::Model() : mModelDefinition(0), mCompiler(0), mInstantiated(false)
 {
 }
 
 Model::Model(const Model &src)
 {
     mModelDefinition = src.mModelDefinition;
+    mCompiler = src.mCompiler;
     mInstantiated = src.mInstantiated;
 }
 
@@ -37,6 +39,11 @@ Model::~Model()
     {
         CellmlModelDefinition* cellml = static_cast<CellmlModelDefinition*>(mModelDefinition);
         delete cellml;
+    }
+    if (mCompiler)
+    {
+        Compiler* compiler = static_cast<Compiler*>(mCompiler);
+        delete compiler;
     }
 }
 
@@ -80,7 +87,31 @@ int Model::instantiate()
     if (! mModelDefinition) return MISSING_MODEL_DEFINTION;
     // TODO: should first check if using a CellML model...
     CellmlModelDefinition* cellml = static_cast<CellmlModelDefinition*>(mModelDefinition);
-    return cellml->instantiate();
+    // FIXME: should expose compiler interface to users?
+    Compiler* compiler;
+    if (!mCompiler)
+    {
+        compiler = new Compiler(true, true);
+        mCompiler = static_cast<void*>(compiler);
+    }
+    else compiler = static_cast<Compiler*>(mCompiler);
+    int code = cellml->instantiate(*compiler);
+    if (code == CSIM_OK) mInstantiated = true;
+    return code;
+}
+
+InitialiseFunction Model::getInitialiseFunction() const
+{
+    if (! mCompiler) return NULL;
+    Compiler* compiler = static_cast<Compiler*>(mCompiler);
+    return compiler->getInitialiseFunction();
+}
+
+ModelFunction Model::getModelFunction() const
+{
+    if (! mCompiler) return NULL;
+    Compiler* compiler = static_cast<Compiler*>(mCompiler);
+    return compiler->getModelFunction();
 }
 
 } // namespace csim

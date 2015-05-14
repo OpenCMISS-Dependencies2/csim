@@ -18,6 +18,7 @@ limitations under the License.Some license of other
 #define CSIM_MODEL_H_
 
 #include "csim/csim_export.h"
+#include "csim/executable_functions.h"
 
 #include <string>
 
@@ -90,6 +91,18 @@ public:
       */
      int instantiate();
 
+     /**
+      * Return a pointer to the initialisation function for this model.
+      * @return A pointer to the initialisation function for this model, NULL on error.
+      */
+     InitialiseFunction getInitialiseFunction() const;
+
+     /**
+      * Get the model function for this model.
+      * @return A pointer to the model function, or NULL on error.
+      */
+     ModelFunction getModelFunction() const;
+
     /**
      * Check if this model has been instantiated into executable code.
      * @return True if a suitable CellML model has been loaded and instantiated; false otherwise.
@@ -104,6 +117,7 @@ private:
      * Internal representation of a CellML model.
      */
     void* mModelDefinition;
+    void* mCompiler;
     bool mInstantiated;
 };
 

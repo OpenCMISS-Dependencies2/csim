@@ -29,7 +29,7 @@ namespace csim {
  *
  * model(voi, states, rates, outputs, inputs)
  */
-typedef void (*modelFunction)(double, double*, double*, double*, double*);
+typedef void (*ModelFunction)(double, double*, double*, double*, double*);
 
 /**
  * This prototype is used for the model initialise function, i.e., set up the state and input arrays with the default
@@ -37,7 +37,7 @@ typedef void (*modelFunction)(double, double*, double*, double*, double*);
  *
  * initialise(states, inputs)
  */
-typedef void (*initialiseFunction)(double*, double*);
+typedef void (*InitialiseFunction)(double*, double*);
 
 } // namespace csim
 

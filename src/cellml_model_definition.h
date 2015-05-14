@@ -5,6 +5,8 @@
 #include <map>
 #include <vector>
 
+#include "compiler.h"
+
 class CellmlApiObjects;
 
 /**
@@ -45,9 +47,10 @@ public:
     /**
      * Instantiate this model defintion into executable coode. Will cause code to be generated and compiled into
      * an executable function.
+     * @param compiler The compiler to use for instantiating the model
      * @return CSIM_OK on success.
      */
-    int instantiate();
+    int instantiate(Compiler& compiler);
 
 private:
     std::string mUrl;
