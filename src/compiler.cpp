@@ -161,6 +161,8 @@ int Compiler::compileCodeString(const std::string& code)
                                        const_cast<const char **>(CCArgs.data()) +
                                        CCArgs.size(),
                                        Diags);
+    // This trick started with a hint from:
+    //     http://clang-developers.42468.n3.nabble.com/Compile-a-string-td907349.html
     std::unique_ptr<llvm::MemoryBuffer> codeBuffer = llvm::MemoryBuffer::getMemBuffer(code);
     CI->getPreprocessorOpts().addRemappedFile(DUMMY_INPUT_FILENAME, codeBuffer.get());
 
