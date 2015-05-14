@@ -228,4 +228,15 @@ int Compiler::compileCodeString(const std::string& code)
     return csim::CSIM_OK;
 }
 
+csim::InitialiseFunction Compiler::getInitialiseFunction()
+{
+    return (csim::InitialiseFunction)(mLLVM->ee->getPointerToNamedFunction(
+                                          "csim_initialise_routine"));
+}
+
+csim::ModelFunction Compiler::getModelFunction()
+{
+    return (csim::ModelFunction)(mLLVM->ee->getPointerToNamedFunction(
+                                     "csim_rhs_routine"));
+}
 

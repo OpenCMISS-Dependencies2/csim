@@ -13,8 +13,8 @@ public:
     ~Compiler();
 
     int compileCodeString(const std::string& code);
-    csim::ModelFunction getModelFunction() { return NULL; }
-    csim::InitialiseFunction getInitialiseFunction() { return NULL; }
+    csim::ModelFunction getModelFunction();
+    csim::InitialiseFunction getInitialiseFunction();
 
 private:
     bool mVerbose;
