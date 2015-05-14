@@ -32,6 +32,13 @@ using namespace clang::driver;
 
 #define DUMMY_INPUT_FILENAME "/tmp/bob.c"
 
+// use this to hide LLVM from the calling code
+class LlvmObjects
+{
+public:
+    std::unique_ptr<llvm::Module> module;
+};
+
 // Code modified from the clang-interpreter example:
 //    http://llvm.org/viewvc/llvm-project/cfe/trunk/examples/clang-interpreter/main.cpp?view=markup
 
@@ -55,14 +62,14 @@ createExecutionEngine(std::unique_ptr<llvm::Module> M, std::string *ErrorStr) {
             .create();
 }
 
-static int Execute(std::unique_ptr<llvm::Module> Mod) {
+static int Execute(LlvmObjects* llvmObjects) {
     llvm::InitializeNativeTarget();
     llvm::InitializeNativeTargetAsmPrinter();
 
-    llvm::Module &M = *Mod;
+    llvm::Module &M = *(llvmObjects->module);
     std::string Error;
     std::unique_ptr<llvm::ExecutionEngine> EE(
-                createExecutionEngine(std::move(Mod), &Error));
+                createExecutionEngine(std::move(llvmObjects->module), &Error));
     if (!EE) {
         llvm::errs() << "unable to make execution engine: " << Error << "\n";
         return 255;
@@ -83,7 +90,7 @@ static int Execute(std::unique_ptr<llvm::Module> Mod) {
 }
 
 Compiler::Compiler(bool verbose, bool debug) :
-    mVerbose(verbose), mDebug(debug)
+    mVerbose(verbose), mDebug(debug), mLLVM(0)
 {
     //llvm::InitializeNativeTarget();
     //llvm::InitializeNativeTargetAsmPrinter();
@@ -94,6 +101,7 @@ Compiler::~Compiler()
     // should we do a
     //llvm::llvm_shutdown();
     // or does that cause our function pointers to disappear?
+    if (mLLVM) delete mLLVM;
 }
 
 int Compiler::compileCodeString(const std::string& code)
@@ -191,7 +199,11 @@ int Compiler::compileCodeString(const std::string& code)
 
     int Res = 255;
     if (std::unique_ptr<llvm::Module> Module = Act->takeModule())
-        Res = Execute(std::move(Module));
+    {
+        mLLVM = new LlvmObjects();
+        mLLVM->module = std::move(Module);
+        Res = Execute(mLLVM);
+    }
 
     // Shutdown.
     llvm::llvm_shutdown();
