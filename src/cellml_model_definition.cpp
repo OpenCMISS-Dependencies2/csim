@@ -18,6 +18,7 @@
 #include <cellml-api-cxx-support.hpp>
 
 #include "csim/error_codes.h"
+#include "compiler.h"
 
 /*
  * Prototype local methods
@@ -209,7 +210,9 @@ int CellmlModelDefinition::instantiate()
                                                   mStateCounter);
     std::cout << "Code string:\n***********************\n" << codeString << "\n#####################################\n"
               << std::endl;
-
+    Compiler compiler(true, true);
+    compiler.compileCodeString(codeString);
+    std::cout << "Got to here 15" << std::endl;
     return csim::CSIM_OK;
 }
 
@@ -506,7 +509,8 @@ std::string generateCodeForModel(CellmlApiObjects* capi,
         int nAlgebraic = cci->algebraicIndexCount();
         int nConstants = cci->constantIndexCount();
 
-        code << "\n\nvoid csim_rhs_routine(double VOI, double* CSIM_STATE, double* CSIM_RATE, double* CSIM_OUTPUT, double* CSIM_INPUT)\n{\n\n"
+        code << "\n\nvoid csim_rhs_routine(double VOI, double* CSIM_STATE, double* CSIM_RATE, double* CSIM_OUTPUT, "
+             << "double* CSIM_INPUT)\n{\n\n"
              << "double DUMMY_ASSIGNMENT;\n"
              << "double CONSTANTS["
              << nConstants
@@ -569,11 +573,18 @@ std::string generateCodeForModel(CellmlApiObjects* capi,
         // and finally create the initialisation routine
         std::stringstream initRoutine;
         initRoutine << "\nvoid csim_initialise_routine(double* CSIM_STATE, double* CSIM_INPUT)\n{\n";
+        // FIXME: this doesn't need to be in the interface?
+        initRoutine << "double CSIM_RATES[" << numberOfStates << "];\n";
         initRoutine << "double CONSTANTS[" << nConstants << "];\n";
         initRoutine << ws2s(cci->initConstsString());
         initRoutine << "\n}\n";
 
         codeString += initRoutine.str();
+
+        // dummy main function for now
+        std::stringstream main;
+        main << "int main(int argc, char* argv[]) {\nprintf(\"Whoo hoo!\\n\\n\"); \n return 0;}\n";
+        codeString += main.str();
     }
     catch (...)
     {

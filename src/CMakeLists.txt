@@ -115,12 +115,14 @@ set(SOURCE_FILES
   ${CMAKE_CURRENT_SOURCE_DIR}/version.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/model.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/cellml_model_definition.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/compiler.cpp
 )
 
 set(API_HEADER_FILES
   ${CMAKE_CURRENT_SOURCE_DIR}/api/csim/version.h
   ${CMAKE_CURRENT_SOURCE_DIR}/api/csim/model.h
   ${CMAKE_CURRENT_SOURCE_DIR}/api/csim/error_codes.h
+  ${CMAKE_CURRENT_SOURCE_DIR}/api/csim/executable_functions.h
   ${CSIM_EXPORT_H}
 )
 
@@ -164,6 +166,8 @@ set_target_properties(csim PROPERTIES
     OUTPUT_NAME csim
     VERSION ${CSIM_LIBRARY_VERSION_STRING}
 )
+
+set_target_properties(csim PROPERTIES CXX_STANDARD 11 CXX_STANDARD_REQUIRED ON)
 
 if(CSIM_TREAT_WARNINGS_AS_ERRORS)
   target_warnings_as_errors(csim)
