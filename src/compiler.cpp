@@ -30,13 +30,15 @@
 using namespace clang;
 using namespace clang::driver;
 
+#include <csim/error_codes.h>
+
 #define DUMMY_INPUT_FILENAME "/tmp/bob.c"
 
 // use this to hide LLVM from the calling code
 class LlvmObjects
 {
 public:
-    std::unique_ptr<llvm::Module> module;
+    llvm::ExecutionEngine* ee;
 };
 
 // Code modified from the clang-interpreter example:
@@ -62,6 +64,7 @@ createExecutionEngine(std::unique_ptr<llvm::Module> M, std::string *ErrorStr) {
             .create();
 }
 
+#if 0
 static int Execute(LlvmObjects* llvmObjects) {
     llvm::InitializeNativeTarget();
     llvm::InitializeNativeTargetAsmPrinter();
@@ -88,6 +91,7 @@ static int Execute(LlvmObjects* llvmObjects) {
     EE->finalizeObject();
     return EE->runFunctionAsMain(EntryFn, Args, NULL);
 }
+#endif
 
 Compiler::Compiler(bool verbose, bool debug) :
     mVerbose(verbose), mDebug(debug), mLLVM(0)
@@ -106,7 +110,6 @@ Compiler::~Compiler()
 
 int Compiler::compileCodeString(const std::string& code)
 {
-    void *MainAddr = (void*) (intptr_t) GetExecutablePath;
     std::string Path = GetExecutablePath("csim");
     IntrusiveRefCntPtr<DiagnosticOptions> DiagOpts = new DiagnosticOptions();
     TextDiagnosticPrinter *DiagClient =
@@ -139,7 +142,7 @@ int Compiler::compileCodeString(const std::string& code)
     Args.push_back(DUMMY_INPUT_FILENAME);
     std::unique_ptr<Compilation> C(TheDriver.BuildCompilation(Args));
     if (!C)
-        return 0;
+        return csim::UNABLE_TO_CREATE_COMPILATION;
 
     // FIXME: This is copied from ASTUnit.cpp; simplify and eliminate.
 
@@ -151,13 +154,13 @@ int Compiler::compileCodeString(const std::string& code)
         llvm::raw_svector_ostream OS(Msg);
         Jobs.Print(OS, "; ", true);
         Diags.Report(diag::err_fe_expected_compiler_job) << OS.str();
-        return 1;
+        return csim::UNABLE_TO_HANDLE_COMPILATION_JOBS;
     }
 
     const driver::Command &Cmd = cast<driver::Command>(*Jobs.begin());
     if (llvm::StringRef(Cmd.getCreator().getName()) != "clang") {
         Diags.Report(diag::err_fe_expected_clang_command);
-        return 1;
+        return csim::INVALID_COMPILER_COMMAND;
     }
 
     // Initialize a compiler invocation object from the clang (-cc1) arguments.
@@ -190,23 +193,39 @@ int Compiler::compileCodeString(const std::string& code)
     // Create the compilers actual diagnostics engine.
     Clang.createDiagnostics();
     if (!Clang.hasDiagnostics())
-        return 1;
+        return csim::COMPILER_MISSING_DIAGNOSTICS;
 
     // Create and execute the frontend to generate an LLVM bitcode module.
     std::unique_ptr<CodeGenAction> Act(new EmitLLVMOnlyAction());
     if (!Clang.ExecuteAction(*Act))
-        return 1;
+        return csim::COMPILER_UNABLE_TO_COMPILE_CODESTRING;
 
-    int Res = 255;
     if (std::unique_ptr<llvm::Module> Module = Act->takeModule())
     {
+        llvm::InitializeNativeTarget();
+        llvm::InitializeNativeTargetAsmPrinter();
         mLLVM = new LlvmObjects();
-        mLLVM->module = std::move(Module);
-        Res = Execute(mLLVM);
+        std::string Error;
+        // This takes over managing the compiledModel object.
+        mLLVM->ee = createExecutionEngine(std::move(Module), &Error);
+        if (! mLLVM->ee)
+        {
+            llvm::errs() << "unable to make execution engine: " << Error << "\n";
+            return csim::COMPILER_UNABLE_TO_MAKE_EXECUTION_ENGINE;
+        }
+        mLLVM->ee->finalizeObject();
+    }
+    else
+    {
+        std::cerr << "Compiler::compileCodeString: Unable to take the module?"
+                  << std::endl;
+        return csim::COMPILER_UNABLE_TO_TAKE_MODULE;
     }
 
     // Shutdown.
     llvm::llvm_shutdown();
 
-    return Res;
+    return csim::CSIM_OK;
 }
+
+
