@@ -208,8 +208,10 @@ int CellmlModelDefinition::instantiate()
     std::string codeString = generateCodeForModel(mCapi, mVariableTypes, mVariableIndices,
                                                   mNumberOfInputVariables,
                                                   mStateCounter);
+    /*
     std::cout << "Code string:\n***********************\n" << codeString << "\n#####################################\n"
               << std::endl;
+    */
     Compiler compiler(true, true);
     compiler.compileCodeString(codeString);
     return csim::CSIM_OK;
