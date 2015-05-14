@@ -94,7 +94,6 @@ Compiler::~Compiler()
     // should we do a
     //llvm::llvm_shutdown();
     // or does that cause our function pointers to disappear?
-    std::cout << "Got to here 14" << std::endl;
 }
 
 int Compiler::compileCodeString(const std::string& code)
@@ -165,6 +164,7 @@ int Compiler::compileCodeString(const std::string& code)
     //     http://clang-developers.42468.n3.nabble.com/Compile-a-string-td907349.html
     std::unique_ptr<llvm::MemoryBuffer> codeBuffer = llvm::MemoryBuffer::getMemBuffer(code);
     CI->getPreprocessorOpts().addRemappedFile(DUMMY_INPUT_FILENAME, codeBuffer.get());
+    codeBuffer.release();
 
     // Show the invocation, with -v.
     if (CI->getHeaderSearchOpts().Verbose) {
@@ -184,12 +184,6 @@ int Compiler::compileCodeString(const std::string& code)
     if (!Clang.hasDiagnostics())
         return 1;
 
-    // Infer the builtin include path if unspecified.
-    if (Clang.getHeaderSearchOpts().UseBuiltinIncludes &&
-        Clang.getHeaderSearchOpts().ResourceDir.empty())
-        Clang.getHeaderSearchOpts().ResourceDir =
-                CompilerInvocation::GetResourcesPath("csim-compiler", MainAddr);
-
     // Create and execute the frontend to generate an LLVM bitcode module.
     std::unique_ptr<CodeGenAction> Act(new EmitLLVMOnlyAction());
     if (!Clang.ExecuteAction(*Act))
@@ -200,10 +194,7 @@ int Compiler::compileCodeString(const std::string& code)
         Res = Execute(std::move(Module));
 
     // Shutdown.
-
-    std::cout << "Got to here 13 + " << Res << std::endl;
-
-    //llvm::llvm_shutdown();
+    llvm::llvm_shutdown();
 
     return Res;
 }

@@ -212,7 +212,6 @@ int CellmlModelDefinition::instantiate()
               << std::endl;
     Compiler compiler(true, true);
     compiler.compileCodeString(codeString);
-    std::cout << "Got to here 15" << std::endl;
     return csim::CSIM_OK;
 }
 
