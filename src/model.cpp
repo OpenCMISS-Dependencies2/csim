@@ -66,6 +66,7 @@ int Model::loadCellmlModel(const std::string &url)
 
 int Model::setVariableAsInput(const std::string& variableId)
 {
+    if (mInstantiated) return MODEL_ALREADY_INSTANTIATED;
     if (! mModelDefinition) return MISSING_MODEL_DEFINTION;
     // TODO: need to check that we are using a CellML model...
     CellmlModelDefinition* cellml = static_cast<CellmlModelDefinition*>(mModelDefinition);
@@ -75,6 +76,7 @@ int Model::setVariableAsInput(const std::string& variableId)
 
 int Model::setVariableAsOutput(const std::string& variableId)
 {
+    if (mInstantiated) return MODEL_ALREADY_INSTANTIATED;
     if (! mModelDefinition) return MISSING_MODEL_DEFINTION;
     // TODO: need to check that we are using a CellML model...
     CellmlModelDefinition* cellml = static_cast<CellmlModelDefinition*>(mModelDefinition);
