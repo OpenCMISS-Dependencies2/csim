@@ -15,6 +15,14 @@ public:
     int compileCodeString(const std::string& code);
     csim::ModelFunction getModelFunction();
     csim::InitialiseFunction getInitialiseFunction();
+    inline bool isVerbose() const
+    {
+        return mVerbose;
+    }
+    inline bool isDebug() const
+    {
+        return mDebug;
+    }
 
 private:
     bool mVerbose;

@@ -84,7 +84,7 @@ int Model::setVariableAsOutput(const std::string& variableId)
     return outputIndex;
 }
 
-int Model::instantiate()
+int Model::instantiate(bool verbose, bool debug)
 {
     if (! mModelDefinition) return MISSING_MODEL_DEFINTION;
     // TODO: should first check if using a CellML model...
@@ -93,7 +93,7 @@ int Model::instantiate()
     Compiler* compiler;
     if (!mCompiler)
     {
-        compiler = new Compiler(true, true);
+        compiler = new Compiler(verbose, debug);
         mCompiler = static_cast<void*>(compiler);
     }
     else compiler = static_cast<Compiler*>(mCompiler);

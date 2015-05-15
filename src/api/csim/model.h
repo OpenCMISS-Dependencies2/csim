@@ -87,9 +87,11 @@ public:
       * Instantiate the current model into an executable function. This method should only be called once all
       * required inputs and outputs have been set. Once a model is instantiated, no further modifications can be made
       * to the inputs and outputs.
+      * @param verbose Tell the compiler to be verbose in its output (defaults to non-verbose output).
+      * @param debug Generate a debug version of the executable functions for this model (defaults to optimised).
       * @return csim::CSIM_OK on success, otherwise error code.
       */
-     int instantiate();
+     int instantiate(bool verbose = false, bool debug = false);
 
      /**
       * Return a pointer to the initialisation function for this model.

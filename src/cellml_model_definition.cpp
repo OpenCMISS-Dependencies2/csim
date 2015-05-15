@@ -207,10 +207,11 @@ int CellmlModelDefinition::instantiate(Compiler& compiler)
     std::string codeString = generateCodeForModel(mCapi, mVariableTypes, mVariableIndices,
                                                   mNumberOfInputVariables,
                                                   mStateCounter);
-    /*
-    std::cout << "Code string:\n***********************\n" << codeString << "\n#####################################\n"
-              << std::endl;
-    */
+    if (compiler.isVerbose())
+    {
+        std::cout << "Code string:\n***********************\n" << codeString << "\n#####################################\n"
+                  << std::endl;
+    }
     compiler.compileCodeString(codeString);
     return csim::CSIM_OK;
 }
@@ -579,11 +580,6 @@ std::string generateCodeForModel(CellmlApiObjects* capi,
         initRoutine << "\n}\n";
 
         codeString += initRoutine.str();
-
-        // dummy main function for now
-        std::stringstream main;
-        main << "int main(int argc, char* argv[]) {\nprintf(\"Whoo hoo!\\n\\n\"); \n return 0;}\n";
-        codeString += main.str();
     }
     catch (...)
     {

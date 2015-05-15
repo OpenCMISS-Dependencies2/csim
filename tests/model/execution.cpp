@@ -33,7 +33,7 @@ TEST(Execution, function_execution) {
     EXPECT_EQ(0, model.setVariableAsOutput("main/sin1"));
     EXPECT_EQ(1, model.setVariableAsOutput("main/sin2"));
     EXPECT_EQ(2, model.setVariableAsOutput("main/sin3"));
-    EXPECT_EQ(csim::CSIM_OK, model.instantiate());
+    EXPECT_EQ(csim::CSIM_OK, model.instantiate(true));
     csim::InitialiseFunction initFunction = model.getInitialiseFunction();
     EXPECT_TRUE(initFunction != NULL);
     csim::ModelFunction modelFunction = model.getModelFunction();
@@ -54,7 +54,7 @@ TEST(Execution, function_execution) {
     EXPECT_EQ(0.0, outputs[1]);
     EXPECT_EQ(0.0, outputs[2]);
     // and that we can override default inital values
-    inputs[0] = 1.0;
+    states[0] = 1.0;
     modelFunction(x, states, rates, outputs, inputs);
     EXPECT_EQ(1.0, outputs[1]);
 }
