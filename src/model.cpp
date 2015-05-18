@@ -125,7 +125,7 @@ ModelFunction Model::getModelFunction() const
 }
 
 std::string Model::mapXpathToVariableId(const std::string &xpath,
-                                        std::map<std::string, std::string> &namespaces)
+                                        const std::map<std::string, std::string>& namespaces)
 const
 {
     return mXmlDoc->getVariableId(xpath, namespaces);

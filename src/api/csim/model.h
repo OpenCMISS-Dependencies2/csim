@@ -128,7 +128,7 @@ public:
      }
 
      std::string mapXpathToVariableId(const std::string& xpath,
-                                      std::map<std::string, std::string>& namespaces) const;
+                                      const std::map<std::string, std::string>& namespaces) const;
 
 private:
     /**
