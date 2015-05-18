@@ -142,7 +142,7 @@ add_library(csim
 )
 
 target_compile_definitions(csim
-  PUBLIC
+  PRIVATE
   ${LLVM_DEFINITIONS}
   ${LIBXML2_DEFINITIONS}
 )
@@ -160,7 +160,6 @@ target_include_directories(csim
 )
 
 target_link_libraries(csim
-  PUBLIC
   PRIVATE
   ${CELLML_LIBRARIES}
   ${REQ_CLANG_LIBRARIES}
