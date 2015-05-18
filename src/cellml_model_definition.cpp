@@ -196,6 +196,7 @@ int CellmlModelDefinition::setVariableAsOutput(const std::string &variableId)
     // we need to allow constant variables to be flagged as wanted since if it is a model with no
     // differential equations then all algebraic variables will be constant - i.e., constitutive laws
     vets.push_back(iface::cellml_services::CONSTANT);
+    vets.push_back(iface::cellml_services::VARIABLE_OF_INTEGRATION);
     int index = flagVariable(variableId, OutputType, vets,
                              mNumberOfOutputVariables, mCapi, mVariableTypes,
                              mVariableIndices);
