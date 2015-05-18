@@ -21,6 +21,7 @@ limitations under the License.Some license of other
 #include "csim/executable_functions.h"
 
 #include <string>
+#include <map>
 
 //! Everything in CSim is in this namespace.
 namespace csim {
@@ -123,6 +124,9 @@ public:
      {
          return mNumberOfStates;
      }
+
+     std::string mapXpathToVariableId(const std::string& xpath,
+                                      std::map<std::string, std::string>& namespaces) const;
 
 private:
     /**

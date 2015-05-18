@@ -118,4 +118,11 @@ ModelFunction Model::getModelFunction() const
     return compiler->getModelFunction();
 }
 
+std::string Model::mapXpathToVariableId(const std::string &xpath,
+                                        std::map<std::string, std::string> &namespaces)
+const
+{
+    return "";
+}
+
 } // namespace csim

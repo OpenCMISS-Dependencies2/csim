@@ -41,6 +41,23 @@ TEST(Model, load_valid_cellml_model_with_imports) {
               model.loadCellmlModel(TestResources::getLocation(TestResources::CELLML_SINE_IMPORTS_MODEL_RESOURCE)));
 }
 
+TEST(Model, map_xpath_to_variable_id) {
+    csim::Model model;
+    EXPECT_EQ(csim::CSIM_OK,
+              model.loadCellmlModel(TestResources::getLocation(TestResources::CELLML_SINE_IMPORTS_MODEL_RESOURCE)));
+    std::map<std::string, std::string> ns;
+    ns["cellml"] = "http://www.cellml.org/cellml/1.1#";
+    EXPECT_EQ("main/sin1", model.mapXpathToVariableId(
+                  "/cellml:model/cellml:component[@name='main']/cellml:variable[@name='sin1']",
+                  ns));
+    EXPECT_EQ(csim::CSIM_OK,
+              model.loadCellmlModel(TestResources::getLocation(TestResources::CELLML_SINE_MODEL_RESOURCE)));
+    ns["cellml"] = "http://www.cellml.org/cellml/1.0#";
+    EXPECT_EQ("actual_sin/x", model.mapXpathToVariableId(
+                  "//cellml:component[@name='actual_sin']/cellml:variable[@name='x']",
+                  ns));
+}
+
 TEST(Model, set_valid_io_variables) {
     csim::Model model;
     EXPECT_EQ(csim::CSIM_OK,
