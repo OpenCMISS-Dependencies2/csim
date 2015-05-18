@@ -31,6 +31,7 @@ Model::Model(const Model &src)
     mModelDefinition = src.mModelDefinition;
     mCompiler = src.mCompiler;
     mInstantiated = src.mInstantiated;
+    mNumberOfStates = 0;
 }
 
 Model::~Model()
@@ -61,6 +62,7 @@ int Model::loadCellmlModel(const std::string &url)
         return UNABLE_TO_LOAD_MODEL_URL;
     }
     mModelDefinition = static_cast<void*>(cellml);
+    mNumberOfStates = cellml->numberOfStateVariables();
     return CSIM_OK;
 }
 

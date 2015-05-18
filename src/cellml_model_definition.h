@@ -52,6 +52,16 @@ public:
      */
     int instantiate(Compiler& compiler);
 
+    /**
+     * The number of state variables in this model. Will only be correct if a model has successfully been loaded.
+     * @return The number of state variables in this model.
+     */
+    inline int numberOfStateVariables() const
+    {
+        if (mModelLoaded) return mStateCounter;
+        else return -1;
+    }
+
 private:
     std::string mUrl;
     /**

@@ -114,6 +114,16 @@ public:
          return mInstantiated;
      }
 
+     /**
+      * Will provide the number of state variables in this model. This is the minimum size of the state and rate
+      * arrays. The returned number will only make sense after a model is successfully loaded.
+      * @return The number of state variables in this model.
+      */
+     inline int numberOfStateVariables() const
+     {
+         return mNumberOfStates;
+     }
+
 private:
     /**
      * Internal representation of a CellML model.
@@ -121,6 +131,7 @@ private:
     void* mModelDefinition;
     void* mCompiler;
     bool mInstantiated;
+    int mNumberOfStates;
 };
 
 } // namespace csim
