@@ -19,10 +19,11 @@ limitations under the License.Some license of other
 #include "csim/error_codes.h"
 #include "cellml_model_definition.h"
 #include "compiler.h"
+#include "xmlutils.h"
 
 namespace csim {
 
-Model::Model() : mModelDefinition(0), mCompiler(0), mInstantiated(false)
+Model::Model() : mModelDefinition(0), mCompiler(0), mInstantiated(false), mXmlDoc(0)
 {
 }
 
@@ -32,6 +33,7 @@ Model::Model(const Model &src)
     mCompiler = src.mCompiler;
     mInstantiated = src.mInstantiated;
     mNumberOfStates = 0;
+    // FIXME: need to copy the xmldoc?
 }
 
 Model::~Model()
@@ -46,6 +48,7 @@ Model::~Model()
         Compiler* compiler = static_cast<Compiler*>(mCompiler);
         delete compiler;
     }
+    if (mXmlDoc) delete mXmlDoc;
 }
 
 int Model::loadCellmlModel(const std::string &url)
@@ -63,6 +66,9 @@ int Model::loadCellmlModel(const std::string &url)
     }
     mModelDefinition = static_cast<void*>(cellml);
     mNumberOfStates = cellml->numberOfStateVariables();
+    if (mXmlDoc) delete mXmlDoc;
+    mXmlDoc = new XmlDoc();
+    mXmlDoc->parseDocument(url);
     return CSIM_OK;
 }
 
@@ -122,7 +128,7 @@ std::string Model::mapXpathToVariableId(const std::string &xpath,
                                         std::map<std::string, std::string> &namespaces)
 const
 {
-    return "";
+    return mXmlDoc->getVariableId(xpath, namespaces);
 }
 
 } // namespace csim

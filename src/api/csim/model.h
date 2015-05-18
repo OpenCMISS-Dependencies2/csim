@@ -23,6 +23,8 @@ limitations under the License.Some license of other
 #include <string>
 #include <map>
 
+class XmlDoc;
+
 //! Everything in CSim is in this namespace.
 namespace csim {
 
@@ -136,6 +138,7 @@ private:
     void* mCompiler;
     bool mInstantiated;
     int mNumberOfStates;
+    XmlDoc* mXmlDoc;
 };
 
 } // namespace csim

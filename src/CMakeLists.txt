@@ -34,6 +34,7 @@ configure_file(
 )
 
 FIND_PACKAGE(CellML REQUIRED)
+FIND_PACKAGE(LibXml2 REQUIRED)
 
 # Since LLVM 3.5 the cmake files are available in the releases, so consolidate on the "cmake" method now.
 find_package(LLVM REQUIRED CONFIG)
@@ -116,6 +117,7 @@ set(SOURCE_FILES
   ${CMAKE_CURRENT_SOURCE_DIR}/model.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/cellml_model_definition.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/compiler.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/xmlutils.cpp
 )
 
 set(API_HEADER_FILES
@@ -142,6 +144,7 @@ add_library(csim
 target_compile_definitions(csim
   PUBLIC
   ${LLVM_DEFINITIONS}
+  ${LIBXML2_DEFINITIONS}
 )
 
 target_include_directories(csim
@@ -153,13 +156,16 @@ target_include_directories(csim
   ${CMAKE_CURRENT_BINARY_DIR}
   ${CELLML_INCLUDE_DIR}
   ${LLVM_INCLUDE_DIRS}
+  ${LIBXML2_INCLUDE_DIR}
 )
 
 target_link_libraries(csim
+  PUBLIC
   PRIVATE
   ${CELLML_LIBRARIES}
   ${REQ_CLANG_LIBRARIES}
   ${REQ_LLVM_LIBRARIES}
+  ${LIBXML2_LIBRARIES}
 )
 
 set_target_properties(csim PROPERTIES
