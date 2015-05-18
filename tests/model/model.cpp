@@ -56,6 +56,9 @@ TEST(Model, map_xpath_to_variable_id) {
     EXPECT_EQ("actual_sin/x", model.mapXpathToVariableId(
                   "//cellml:component[@name='actual_sin']/cellml:variable[@name='x']",
                   ns));
+    EXPECT_EQ("main/x", model.mapXpathToVariableId(
+                  "//cellml:component[@name='main']/cellml:variable[@name='x']/@initial_value",
+                  ns));
 }
 
 TEST(Model, set_valid_io_variables) {

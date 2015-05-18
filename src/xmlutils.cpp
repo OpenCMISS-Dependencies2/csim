@@ -79,6 +79,19 @@ std::string XmlDoc::getVariableId(const std::string& xpathExpr, const std::map<s
                 xmlFree(variableName);
                 xmlFree(componentName);
             }
+            else if ((node->type == XML_ATTRIBUTE_NODE) && node->parent->name &&
+                     (!strcmp((char*)(node->parent->name), "variable")))
+            {
+                // for a set value change, the XPath is likely to refer to an @initial_value
+                // FIXME: need to handle the case when the XPath refers to a mathml:cn with the value to set
+                char* variableName = (char*)xmlGetProp(node->parent, BAD_CAST "name");
+                char* componentName = (char*)xmlGetProp(node->parent->parent, BAD_CAST "name");
+                id = std::string(componentName);
+                id += "/";
+                id += std::string(variableName);
+                xmlFree(variableName);
+                xmlFree(componentName);
+            }
         }
         xmlXPathFreeNodeSet(results);
     }
