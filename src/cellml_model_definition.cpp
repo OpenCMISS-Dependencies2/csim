@@ -573,7 +573,7 @@ std::string generateCodeForModel(CellmlApiObjects* capi,
 
         // and finally create the initialisation routine
         std::stringstream initRoutine;
-        initRoutine << "\nvoid csim_initialise_routine(double* CSIM_STATE, double* CSIM_INPUT)\n{\n";
+        initRoutine << "\nvoid csim_initialise_routine(double* CSIM_STATE, double* CSIM_OUTPUT, double* CSIM_INPUT)\n{\n";
         // FIXME: this doesn't need to be in the interface?
         initRoutine << "double CSIM_RATES[" << numberOfStates << "];\n";
         initRoutine << "double CONSTANTS[" << nConstants << "];\n";

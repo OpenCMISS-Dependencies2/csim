@@ -33,11 +33,12 @@ typedef void (*ModelFunction)(double, double*, double*, double*, double*);
 
 /**
  * This prototype is used for the model initialise function, i.e., set up the state and input arrays with the default
- * values from the model used to generate this function.
+ * values from the model used to generate this function. Also need outputs in case any constants are flagged as outputs
+ * but not inputs.
  *
- * initialise(states, inputs)
+ * initialise(states, outputs, inputs)
  */
-typedef void (*InitialiseFunction)(double*, double*);
+typedef void (*InitialiseFunction)(double*, double*, double*);
 
 } // namespace csim
 

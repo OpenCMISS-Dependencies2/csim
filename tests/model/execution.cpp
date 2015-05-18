@@ -42,7 +42,7 @@ TEST(Execution, function_execution) {
     // make sure the values get set correctly on initialisation
     inputs[0] = -123;
     states[0] = -321;
-    initFunction(states, inputs);
+    initFunction(states, outputs, inputs);
     EXPECT_EQ(0.0, states[0]);
     EXPECT_EQ(0.0, inputs[0]);
     outputs[0] = 123;
