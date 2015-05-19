@@ -47,7 +47,8 @@ static std::string clearCodeAssignments(const std::string& s, const std::string&
 // to give random overlaps. But separating out like this seems to have resolved the issue?
 static std::string getVariableUniqueId(iface::cellml_api::CellMLVariable* variable)
 {
-    return variable->objid();
+    std::string id = variable->objid();
+    return id;
 }
 
 /**
@@ -56,11 +57,11 @@ static std::string getVariableUniqueId(iface::cellml_api::CellMLVariable* variab
  * http://www.cplusplus.com/forum/general/1590/
  */
 enum VariableTypes {
-    StateType        = 0x01,
-    InputType        = 0x02,
-    OutputType       = 0x04,
-    IndependentType  = 0x08,
-  //OpFullscreen    = 0x10,
+    UndefinedType    = 0x01,
+    StateType        = 0x02,
+    InputType        = 0x04,
+    OutputType       = 0x08,
+    IndependentType  = 0x10
   //OpDaylight      = 0x20
 };
 
@@ -150,18 +151,31 @@ int CellmlModelDefinition::loadModel(const std::string &url)
             {
                 ObjRef<iface::cellml_services::ComputationTarget> ct = cti->nextComputationTarget();
                 if (ct == NULL) break;
+                if (ct->degree() > 0) break; // only want to initialise the base variables not the differential
                 ObjRef<iface::cellml_api::CellMLVariable> v(ct->variable());
+                std::string vname = ws2s(v->name());
+                std::string cname = ws2s(v->componentName());
+                std::cout << "Loading model and setting " << cname << "/" << vname << " to be: ";
                 if (ct->type() == iface::cellml_services::STATE_VARIABLE)
                 {
+                    std::cout << "StateType";
                     mVariableTypes[getVariableUniqueId(v)] = StateType;
                     mVariableIndices[getVariableUniqueId(v)][StateType] = mStateCounter;
                     mStateCounter++;
                 }
                 else if (ct->type() == iface::cellml_services::VARIABLE_OF_INTEGRATION)
                 {
+                    std::cout << "IndependentType";
                     mVariableTypes[getVariableUniqueId(v)] = IndependentType;
                     mNumberOfIndependentVariables++;
                 }
+                else
+                {
+                    std::cout << "UndefinedType";
+                    // need to initialise the variable type
+                    mVariableTypes[getVariableUniqueId(v)] = UndefinedType;
+                }
+                std::cout << std::endl;
             }
         }
         catch (...)
@@ -458,6 +472,12 @@ std::string generateCodeForModel(CellmlApiObjects* capi,
                 // here we assign an array and index based on the "primary" purpose of the variable. Later
                 // we will add in secondary purposes.
                 unsigned char vType = typeit->second;
+                std::cout << "Variable: " << ws2s(sv->name()) << " / " << ws2s(sv->componentName()) << " has been flagged:\n";
+                if (vType & UndefinedType) std::cout << "\tUndefined type\n";
+                if (vType & StateType) std::cout << "\tState type\n";
+                if (vType & IndependentType) std::cout << "\tIndependent type\n";
+                if (vType & InputType) std::cout << "\tInput type\n";
+                if (vType & OutputType) std::cout << "\tOutput type\n";
                 if (vType & StateType)
                 {
                     ename << L"CSIM_STATE[" << variableIndices[currentId][StateType] << L"]";
