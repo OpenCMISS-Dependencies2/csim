@@ -26,6 +26,20 @@ endforeach()
 set(CSIM_LIBRARY_VERSION 0x${CSIM_VERSION_MAJOR_PAD}${CSIM_VERSION_MAJOR}${CSIM_VERSION_MINOR_PAD}${CSIM_VERSION_MINOR}${CSIM_VERSION_PATCH_PAD}${CSIM_VERSION_PATCH})
 set(CSIM_LIBRARY_VERSION_STRING "${CSIM_VERSION_MAJOR}.${CSIM_VERSION_MINOR}.${CSIM_VERSION_PATCH}")
 
+# this only works for C files
+#INCLUDE (CheckIncludeFiles)
+# usage: CHECK_INCLUDE_FILES (<header> <RESULT_VARIABLE> )
+#CHECK_INCLUDE_FILES ("codecvt" CSIM_HAVE_STD_CODECVT)
+
+INCLUDE (CheckCXXSourceCompiles)
+check_cxx_source_compiles("
+  #include <codecvt>
+  int main() {
+    std::codecvt_utf8_utf16<wchar_t> x;
+    return 0;
+  }
+" CSIM_HAVE_STD_CODECVT)
+
 set(CSIM_EXPORT_H "${CMAKE_CURRENT_BINARY_DIR}/api/csim/csim_export.h")
 set(CSIM_CONFIG_H "${CMAKE_CURRENT_BINARY_DIR}/csim_config.h")
 configure_file(
@@ -160,6 +174,8 @@ target_include_directories(csim
 )
 
 target_link_libraries(csim
+  INTERFACE
+  ${CELLML_LIBRARIES}
   PRIVATE
   ${CELLML_LIBRARIES}
   ${REQ_CLANG_LIBRARIES}
@@ -180,7 +196,7 @@ endif()
 
 if(CSIM_COVERAGE)
   set_target_properties(csim PROPERTIES COMPILE_FLAGS "-fprofile-arcs -ftest-coverage")
-  target_link_libraries(csim gcov)
+  target_link_libraries(csim PRIVATE gcov)
 
   # Share some paths with interested parties (tests)
   set(GCOV_ANALYSIS_PATH "${CMAKE_CURRENT_BINARY_DIR}${CMAKE_FILES_DIRECTORY}/csim.dir" PARENT_SCOPE)

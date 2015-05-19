@@ -1,11 +1,16 @@
 
+#include "csim_config.h"
 #include "cellml_model_definition.h"
 
 #include <iostream>
 #include <sstream>
 #include <string>
 #include <locale>
-#include <codecvt>
+#ifdef CSIM_HAVE_STD_CODECVT
+#  include <codecvt>
+#else
+#  include <wchar.h>
+#endif
 
 #include <IfaceCellML_APISPEC.hxx>
 #include <IfaceCCGS.hxx>
@@ -213,22 +218,57 @@ int CellmlModelDefinition::instantiate(Compiler& compiler)
         std::cout << "Code string:\n***********************\n" << codeString << "\n#####################################\n"
                   << std::endl;
     }
-    compiler.compileCodeString(codeString);
-    return csim::CSIM_OK;
+    return compiler.compileCodeString(codeString);
 }
 
 std::wstring s2ws(const std::string& str)
 {
+#ifdef CSIM_HAVE_STD_CODECVT
     typedef std::codecvt_utf8<wchar_t> convert_typeX;
     std::wstring_convert<convert_typeX, wchar_t> converterX;
     return converterX.from_bytes(str);
+#else
+    std::wstring ss;
+    if (str.length() > 0)
+    {
+        const char* sp = str.c_str();
+        wchar_t* s;
+        size_t l = strlen(sp);
+        s = (wchar_t*)malloc(sizeof(wchar_t)*(l+1));
+        memset(s,0,(l+1)*sizeof(wchar_t));
+        mbsrtowcs(s,&sp,l,NULL);
+        ss = std::wstring(s);
+        free(s);
+        return(ss);
+    }
+    return(ss);
+#endif
 }
 
 std::string ws2s(const std::wstring& wstr)
 {
+#ifdef CSIM_HAVE_STD_CODECVT
     typedef std::codecvt_utf8<wchar_t> convert_typeX;
     std::wstring_convert<convert_typeX, wchar_t> converterX;
     return converterX.to_bytes(wstr);
+#else
+    std::string ss;
+    if (wstr.length() > 0)
+    {
+        const wchar_t* sp = wstr.c_str();
+        size_t len = wcsrtombs(NULL,&sp,0,NULL);
+        if (len > 0)
+        {
+            len++;
+            char* s = (char*)malloc(len);
+            wcsrtombs(s,&sp,len,NULL);
+            ss = std::string(s);
+            free(s);
+            return(ss);
+        }
+    }
+    return(ss);
+#endif
 }
 
 int flagVariable(const std::string& variableId, unsigned char type,
@@ -411,20 +451,29 @@ std::string generateCodeForModel(CellmlApiObjects* capi,
                 // here we assign an array and index based on the "primary" purpose of the variable. Later
                 // we will add in secondary purposes.
                 unsigned char vType = typeit->second;
+                /*std::cout << "Variable: " << ws2s(sv->name()) << " / " << ws2s(sv->componentName()) << " has been flagged:\n";
+                if (vType & StateType) std::cout << "\tState type\n";
+                if (vType & IndependentType) std::cout << "\tIndependent type\n";
+                if (vType & InputType) std::cout << "\tInput type\n";
+                if (vType & OutputType) std::cout << "\tOutput type\n";*/
                 if (vType & StateType)
                 {
+                    std::cout << "\tState type chosen\n";
                     ename << L"CSIM_STATE[" << variableIndices[currentId][StateType] << L"]";
                 }
                 else if (vType & IndependentType)
                 {
                     // do nothing, but stop input and output annotations
+                    std::cout << "\tIndependent type chosen\n";
                 }
                 else if (vType & InputType)
                 {
+                    std::cout << "\tInput type chosen\n";
                     ename << L"CSIM_INPUT[" << variableIndices[currentId][InputType] << L"]";
                 }
                 else if (vType & OutputType)
                 {
+                    std::cout << "\tOutput type chosen\n";
                     ename << L"CSIM_OUTPUT[" << variableIndices[currentId][OutputType] << L"]";
                 }
                 capi->annotations->setStringAnnotation(sv, L"expression", ename.str());
