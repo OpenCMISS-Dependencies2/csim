@@ -43,6 +43,13 @@ typedef std::pair<std::string, std::string> CVpair;
 static CVpair splitName(const std::string& s);
 static std::string clearCodeAssignments(const std::string& s, const std::string& array, int count);
 
+// need a method to uniquely identify variables by string, using the objid directly seemed
+// to give random overlaps. But separating out like this seems to have resolved the issue?
+static std::string getVariableUniqueId(iface::cellml_api::CellMLVariable* variable)
+{
+    return variable->objid();
+}
+
 /**
  * In order to be flexible in allowing a single variable to be multiple types (state
  * and output; input and output; etc.) we use these bit flags.
@@ -146,13 +153,13 @@ int CellmlModelDefinition::loadModel(const std::string &url)
                 ObjRef<iface::cellml_api::CellMLVariable> v(ct->variable());
                 if (ct->type() == iface::cellml_services::STATE_VARIABLE)
                 {
-                    mVariableTypes[v->objid()] = StateType;
-                    mVariableIndices[v->objid()][StateType] = mStateCounter;
+                    mVariableTypes[getVariableUniqueId(v)] = StateType;
+                    mVariableIndices[getVariableUniqueId(v)][StateType] = mStateCounter;
                     mStateCounter++;
                 }
                 else if (ct->type() == iface::cellml_services::VARIABLE_OF_INTEGRATION)
                 {
-                    mVariableTypes[v->objid()] = IndependentType;
+                    mVariableTypes[getVariableUniqueId(v)] = IndependentType;
                     mNumberOfIndependentVariables++;
                 }
             }
@@ -295,7 +302,7 @@ int flagVariable(const std::string& variableId, unsigned char type,
 
     // check if source is already flagged with the specified type.
     std::map<std::string, unsigned char>::iterator currentAnnotation =
-            variableTypes.find(sv->objid());
+            variableTypes.find(getVariableUniqueId(sv));
     unsigned char currentTypes;
     if (currentAnnotation != variableTypes.end())
     {
@@ -303,7 +310,7 @@ int flagVariable(const std::string& variableId, unsigned char type,
         if (currentTypes & type)
         {
             std::cout << "Already flagged same type, nothing to do." << std::endl;
-            return variableIndices[sv->objid()][type];
+            return variableIndices[getVariableUniqueId(sv)][type];
         }
     }
     // find corresponding computation target
@@ -367,9 +374,9 @@ int flagVariable(const std::string& variableId, unsigned char type,
         std::cerr << std::endl;
         return csim::MISMATCHED_COMPUTATION_TARGET;
     }
-    variableTypes[sv->objid()] = currentTypes | type;
-    variableIndices[sv->objid()][type] = count++;
-    return variableIndices[sv->objid()][type];
+    variableTypes[getVariableUniqueId(sv)] = currentTypes | type;
+    variableIndices[getVariableUniqueId(sv)][type] = count++;
+    return variableIndices[getVariableUniqueId(sv)][type];
 }
 
 ObjRef<iface::cellml_api::CellMLVariable> findLocalVariable(CellmlApiObjects* capi, const std::string& variableId)
@@ -443,7 +450,7 @@ std::string generateCodeForModel(CellmlApiObjects* capi,
         {
             ObjRef<iface::cellml_services::ConnectedVariableSet> cvs = capi->cevas->getVariableSet(i);
             ObjRef<iface::cellml_api::CellMLVariable> sv = cvs->sourceVariable();
-            std::string currentId = sv->objid();
+            std::string currentId = getVariableUniqueId(sv);
             std::map<std::string, unsigned char>::iterator typeit(variableTypes.find(currentId));
             if (typeit != variableTypes.end())
             {
@@ -451,29 +458,20 @@ std::string generateCodeForModel(CellmlApiObjects* capi,
                 // here we assign an array and index based on the "primary" purpose of the variable. Later
                 // we will add in secondary purposes.
                 unsigned char vType = typeit->second;
-                /*std::cout << "Variable: " << ws2s(sv->name()) << " / " << ws2s(sv->componentName()) << " has been flagged:\n";
-                if (vType & StateType) std::cout << "\tState type\n";
-                if (vType & IndependentType) std::cout << "\tIndependent type\n";
-                if (vType & InputType) std::cout << "\tInput type\n";
-                if (vType & OutputType) std::cout << "\tOutput type\n";*/
                 if (vType & StateType)
                 {
-                    std::cout << "\tState type chosen\n";
                     ename << L"CSIM_STATE[" << variableIndices[currentId][StateType] << L"]";
                 }
                 else if (vType & IndependentType)
                 {
                     // do nothing, but stop input and output annotations
-                    std::cout << "\tIndependent type chosen\n";
                 }
                 else if (vType & InputType)
                 {
-                    std::cout << "\tInput type chosen\n";
                     ename << L"CSIM_INPUT[" << variableIndices[currentId][InputType] << L"]";
                 }
                 else if (vType & OutputType)
                 {
-                    std::cout << "\tOutput type chosen\n";
                     ename << L"CSIM_OUTPUT[" << variableIndices[currentId][OutputType] << L"]";
                 }
                 capi->annotations->setStringAnnotation(sv, L"expression", ename.str());
@@ -589,7 +587,7 @@ std::string generateCodeForModel(CellmlApiObjects* capi,
         {
             ObjRef<iface::cellml_services::ConnectedVariableSet> cvs = capi->cevas->getVariableSet(i);
             ObjRef<iface::cellml_api::CellMLVariable> sv = cvs->sourceVariable();
-            std::string currentId = sv->objid();
+            std::string currentId = getVariableUniqueId(sv);
             std::map<std::string, unsigned char>::iterator typeit(variableTypes.find(currentId));
             if (typeit != variableTypes.end())
             {
