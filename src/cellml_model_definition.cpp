@@ -515,7 +515,6 @@ std::string generateCodeForModel(CellmlApiObjects* capi,
         std::cout << "Model is correctly constrained" << std::endl;
         // create the code in the format we know how to handle
         code << "#include <math.h>\n"
-             << "#include <stdio.h>\n"
         /* required functions */
              << "extern double fabs(double x);\n"
              << "extern double acos(double x);\n"
