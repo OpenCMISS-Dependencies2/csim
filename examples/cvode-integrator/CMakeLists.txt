@@ -16,6 +16,16 @@ add_executable(${PROJECT_NAME}
     ${SOURCE_FILES}
 )
 
+set(PLATFORM_DEFINES "")
+if (MSVC)
+    set(PLATFORM_DEFINES "_USE_MATH_DEFINES")
+endif ()
+
+target_compile_definitions(${PROJECT_NAME}
+    PRIVATE
+    ${PLATFORM_DEFINES}
+)
+
 target_include_directories(${PROJECT_NAME}
     PUBLIC
     ${CVODE_INCLUDE_DIR}
