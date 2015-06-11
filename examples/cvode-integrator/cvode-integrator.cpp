@@ -96,7 +96,7 @@ int main(int argc, char* argv[])
         return -4;
     }
     ud.states = N_VNew_Serial(model.numberOfStateVariables());
-    double rates[model.numberOfStateVariables()];
+	N_Vector rates = N_VNew_Serial(model.numberOfStateVariables());
     ud.inputs = N_VNew_Serial(0);
     ud.outputs = N_VNew_Serial(outputNames.size());
     // now get CVODE set up
@@ -104,7 +104,7 @@ int main(int argc, char* argv[])
     // initialise the inputs and initial values of the state variables
     initFunction(NV_DATA_S(ud.states), NV_DATA_S(ud.outputs), NV_DATA_S(ud.inputs));
     // and calculate and print the initial state of the model
-    ud.modelFunction(x0, NV_DATA_S(ud.states), rates, NV_DATA_S(ud.outputs), NV_DATA_S(ud.inputs));
+    ud.modelFunction(x0, NV_DATA_S(ud.states), NV_DATA_S(rates), NV_DATA_S(ud.outputs), NV_DATA_S(ud.inputs));
     std::cout << "results headed goes here" << std::endl;
     printResults(ud);
 
@@ -130,7 +130,7 @@ int main(int argc, char* argv[])
         flag = CVode(cvode_mem, xout, ud.states, &x, CV_NORMAL);
         if (check_flag(&flag,"CVode",1)) return(1);
         // call the model's function to make sure all the outputs are at the current time
-        ud.modelFunction(xout, NV_DATA_S(ud.states), rates, NV_DATA_S(ud.outputs), NV_DATA_S(ud.inputs));
+        ud.modelFunction(xout, NV_DATA_S(ud.states), NV_DATA_S(rates), NV_DATA_S(ud.outputs), NV_DATA_S(ud.inputs));
         printResults(ud);
     }
     return 0;
