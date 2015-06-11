@@ -102,7 +102,7 @@ int main(int argc, char* argv[])
     // now get CVODE set up
     double reltol = RTOL, abstol = ATOL;
     // initialise the inputs and initial values of the state variables
-    initFunction(NV_DATA_S(ud.states), NV_DATA_S(ud.inputs));
+    initFunction(NV_DATA_S(ud.states), NV_DATA_S(ud.outputs), NV_DATA_S(ud.inputs));
     // and calculate and print the initial state of the model
     ud.modelFunction(x0, NV_DATA_S(ud.states), rates, NV_DATA_S(ud.outputs), NV_DATA_S(ud.inputs));
     std::cout << "results headed goes here" << std::endl;
@@ -129,7 +129,8 @@ int main(int argc, char* argv[])
         if (check_flag(&flag,"CVodeSetStopStime",1)) return(1);
         flag = CVode(cvode_mem, xout, ud.states, &x, CV_NORMAL);
         if (check_flag(&flag,"CVode",1)) return(1);
-
+        // call the model's function to make sure all the outputs are at the current time
+        ud.modelFunction(xout, NV_DATA_S(ud.states), rates, NV_DATA_S(ud.outputs), NV_DATA_S(ud.inputs));
         printResults(ud);
     }
     return 0;
