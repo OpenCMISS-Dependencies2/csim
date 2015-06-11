@@ -184,8 +184,6 @@ target_include_directories(csim
 )
 
 target_link_libraries(csim
-  INTERFACE
-  ${CELLML_LIBRARIES}
   PRIVATE
   ${CELLML_LIBRARIES}
   ${REQ_CLANG_LIBRARIES}
