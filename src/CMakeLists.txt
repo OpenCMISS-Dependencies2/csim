@@ -55,16 +55,16 @@ find_package(LLVM REQUIRED CONFIG)
 message(STATUS "Found LLVM ${LLVM_PACKAGE_VERSION}")
 message(STATUS "Using LLVMConfig.cmake in: ${LLVM_DIR}")
 
-llvm_map_components_to_libnames(REQ_LLVM_LIBRARIES
+llvm_map_components_to_libnames(REQ_LLVM_LIBNAMES
     instrumentation
     mcjit
     interpreter
     x86codegen
-    asmparser
     bitwriter
     ipo
     option
     irreader
+    asmparser
     linker
     runtimedyld
     executionengine
@@ -81,18 +81,28 @@ llvm_map_components_to_libnames(REQ_LLVM_LIBRARIES
     instcombine
     transformutils
     ipa
-    analysis
     target
     vectorize
     core
     mc
+    mcdisassembler
     object
+    analysis
+    profiledata
+    x86asmprinter
     support
 )
+set(REQ_LLVM_LIBRARIES)
+foreach(llvmLib ${REQ_LLVM_LIBNAMES})
+    find_library(foundLib_${llvmLib} ${llvmLib} PATHS ${LLVM_LIBRARY_DIRS})
+    list(APPEND REQ_LLVM_LIBRARIES ${foundLib_${llvmLib}})
+endforeach()
 
-#    if( ${OPERATING_SYSTEM} STREQUAL "linux" )
-#        SET(PLATFORM_LIBS ${PLATFORM_LIBS} "dl" "pthread" "tinfo")
-#    endif()
+if( ${CMAKE_SYSTEM_NAME} STREQUAL "Linux" )
+  SET(PLATFORM_LIBS ${PLATFORM_LIBS} "dl" "pthread" "tinfo" "z")
+elseif( ${CMAKE_SYSTEM_NAME} STREQUAL "Darwin" )
+  SET(PLATFORM_LIBS ${PLATFORM_LIBS} "ncurses" "z")
+endif()
 
 set(REQ_CLANG_LIBNAMES
     clangFrontend
@@ -181,6 +191,7 @@ target_link_libraries(csim
   ${REQ_CLANG_LIBRARIES}
   ${REQ_LLVM_LIBRARIES}
   ${LIBXML2_LIBRARIES}
+  ${PLATFORM_LIBS}
 )
 
 set_target_properties(csim PROPERTIES
@@ -223,3 +234,14 @@ install(FILES
 
 install(EXPORT csim-targets DESTINATION lib/cmake)
 
+set(CPACK_PACKAGE_VERSION_MAJOR "${CSIM_VERSION_MAJOR}")
+set(CPACK_PACKAGE_VERSION_MINOR "${CSIM_VERSION_MINOR}")
+set(CPACK_PACKAGE_VERSION_PATCH "${CSIM_VERSION_PATCH}")
+
+if(WIN32)
+  set(CPACK_GENERATOR ZIP)
+else()
+  set(CPACK_GENERATOR TGZ)
+endif()
+
+include(CPack)
