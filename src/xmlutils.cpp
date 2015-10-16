@@ -57,6 +57,26 @@ int XmlDoc::parseDocument(const std::string& url)
     return 0;
 }
 
+std::string XmlDoc::dumpString() const
+{
+    xmlDocPtr doc = static_cast<xmlDocPtr>(mXmlDocPtr);
+    if (doc == NULL)
+    {
+        std::cerr << "Error dumping string\n";
+        return "";
+    }
+    xmlChar *s;
+    int size;
+    xmlDocDumpMemory(doc, &s, &size);
+    if (s == NULL)
+    {
+        return "";
+    }
+    std::string out = std::string((char*)s);
+    xmlFree(s);
+    return out;
+}
+
 std::string XmlDoc::getVariableId(const std::string& xpathExpr, const std::map<std::string, std::string>& namespaces)
 {
     std::string id;

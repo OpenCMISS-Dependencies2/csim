@@ -7,6 +7,7 @@ public:
     XmlDoc();
     ~XmlDoc();
     int parseDocument(const std::string& url);
+    std::string dumpString() const;
     std::string getVariableId(const std::string& xpathExpr, const std::map<std::string, std::string> &namespaces);
 
 private:

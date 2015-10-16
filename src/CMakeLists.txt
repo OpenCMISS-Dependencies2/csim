@@ -15,7 +15,7 @@
 # The version number.
 set(CSIM_VERSION_MAJOR 2)
 set(CSIM_VERSION_MINOR 0)
-set(CSIM_VERSION_PATCH 0)
+set(CSIM_VERSION_PATCH 1)
 
 foreach(VERSION_PART CSIM_VERSION_MAJOR CSIM_VERSION_MINOR CSIM_VERSION_PATCH)
   string(LENGTH ${${VERSION_PART}} VERSION_PART_LENGTH)
@@ -142,6 +142,7 @@ set(SOURCE_FILES
   ${CMAKE_CURRENT_SOURCE_DIR}/cellml_model_definition.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/compiler.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/xmlutils.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/csimsbw.cpp
 )
 
 set(API_HEADER_FILES
@@ -149,6 +150,7 @@ set(API_HEADER_FILES
   ${CMAKE_CURRENT_SOURCE_DIR}/api/csim/model.h
   ${CMAKE_CURRENT_SOURCE_DIR}/api/csim/error_codes.h
   ${CMAKE_CURRENT_SOURCE_DIR}/api/csim/executable_functions.h
+  ${CMAKE_CURRENT_SOURCE_DIR}/api/csimsbw.h
   ${CSIM_EXPORT_H}
 )
 
