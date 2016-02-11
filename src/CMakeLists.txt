@@ -47,11 +47,11 @@ configure_file(
   ${CSIM_CONFIG_H}
 )
 
-FIND_PACKAGE(CellML REQUIRED)
-FIND_PACKAGE(LibXml2 REQUIRED)
+FIND_PACKAGE(CellML ${CELLML_VERSION} REQUIRED CONFIG)
+FIND_PACKAGE(LibXml2 ${LIBXML2_VERSION} REQUIRED)
 
 # Since LLVM 3.5 the cmake files are available in the releases, so consolidate on the "cmake" method now.
-find_package(LLVM REQUIRED CONFIG)
+find_package(LLVM ${LLVM_VERSION} REQUIRED CONFIG)
 message(STATUS "Found LLVM ${LLVM_PACKAGE_VERSION}")
 message(STATUS "Using LLVMConfig.cmake in: ${LLVM_DIR}")
 
@@ -170,7 +170,6 @@ add_library(csim
 target_compile_definitions(csim
   PRIVATE
   ${LLVM_DEFINITIONS}
-  ${LIBXML2_DEFINITIONS}
 )
 
 target_include_directories(csim
@@ -180,17 +179,14 @@ target_include_directories(csim
   $<INSTALL_INTERFACE:include/>
   PRIVATE
   ${CMAKE_CURRENT_BINARY_DIR}
-  ${CELLML_INCLUDE_DIR}
   ${LLVM_INCLUDE_DIRS}
-  ${LIBXML2_INCLUDE_DIR}
 )
 
-target_link_libraries(csim
-  PRIVATE
-  ${CELLML_LIBRARIES}
+target_link_libraries(csim PRIVATE
+  cellml
   ${REQ_CLANG_LIBRARIES}
   ${REQ_LLVM_LIBRARIES}
-  ${LIBXML2_LIBRARIES}
+  libxml2
   ${PLATFORM_LIBS}
 )
 
@@ -221,7 +217,7 @@ set_source_files_properties(${CSIM_EXPORT_H} PROPERTIES GENERATED TRUE)
 
 export(TARGETS csim FILE csim-exports.cmake)
 
-install(TARGETS csim EXPORT csim-targets
+install(TARGETS csim EXPORT csim-config
   RUNTIME DESTINATION bin
   LIBRARY DESTINATION lib
   ARCHIVE DESTINATION lib
@@ -232,7 +228,7 @@ install(FILES
   DESTINATION include/csim
 )
 
-install(EXPORT csim-targets DESTINATION lib/cmake)
+install(EXPORT csim-config DESTINATION cmake)
 
 set(CPACK_PACKAGE_VERSION_MAJOR "${CSIM_VERSION_MAJOR}")
 set(CPACK_PACKAGE_VERSION_MINOR "${CSIM_VERSION_MINOR}")
