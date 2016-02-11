@@ -183,10 +183,10 @@ target_include_directories(csim
 )
 
 target_link_libraries(csim PRIVATE
-  cellml
+  libcellml
   ${REQ_CLANG_LIBRARIES}
   ${REQ_LLVM_LIBRARIES}
-  libxml2
+  xml2
   ${PLATFORM_LIBS}
 )
 
