@@ -49,92 +49,17 @@ configure_file(
 
 FIND_PACKAGE(CellML ${CELLML_VERSION} REQUIRED CONFIG)
 FIND_PACKAGE(LibXml2 ${LIBXML2_VERSION} REQUIRED)
+FIND_PACKAGE(ZLIB ${ZLIB_VERSION} REQUIRED)
 
 # Since LLVM 3.5 the cmake files are available in the releases, so consolidate on the "cmake" method now.
 find_package(LLVM ${LLVM_VERSION} REQUIRED CONFIG)
-message(STATUS "Found LLVM ${LLVM_PACKAGE_VERSION}")
-message(STATUS "Using LLVMConfig.cmake in: ${LLVM_DIR}")
-
-llvm_map_components_to_libnames(REQ_LLVM_LIBNAMES
-    instrumentation
-    mcjit
-    interpreter
-    x86codegen
-    bitwriter
-    ipo
-    option
-    irreader
-    asmparser
-    linker
-    runtimedyld
-    executionengine
-    asmprinter
-    selectiondag
-    objcarcopts
-    x86desc
-    mcparser
-    codegen
-    x86info
-    bitreader
-    scalaropts
-    x86utils
-    instcombine
-    transformutils
-    ipa
-    target
-    vectorize
-    core
-    mc
-    mcdisassembler
-    object
-    analysis
-    profiledata
-    x86asmprinter
-    support
-)
-set(REQ_LLVM_LIBRARIES)
-foreach(llvmLib ${REQ_LLVM_LIBNAMES})
-    find_library(foundLib_${llvmLib} ${llvmLib} PATHS ${LLVM_LIBRARY_DIRS})
-    list(APPEND REQ_LLVM_LIBRARIES ${foundLib_${llvmLib}})
-endforeach()
+find_package(Clang ${CLANG_VERSION} REQUIRED CONFIG)
 
 if( ${CMAKE_SYSTEM_NAME} STREQUAL "Linux" )
-  SET(PLATFORM_LIBS ${PLATFORM_LIBS} "dl" "pthread" "tinfo" "z")
+  SET(PLATFORM_LIBS ${PLATFORM_LIBS} "dl" "pthread" "tinfo")
 elseif( ${CMAKE_SYSTEM_NAME} STREQUAL "Darwin" )
-  SET(PLATFORM_LIBS ${PLATFORM_LIBS} "ncurses" "z")
+  SET(PLATFORM_LIBS ${PLATFORM_LIBS} "ncurses")
 endif()
-
-set(REQ_CLANG_LIBNAMES
-    clangFrontend
-    clangSerialization
-    clangDriver
-    clangCodeGen
-    clangParse
-    clangSema
-    clangStaticAnalyzerFrontend
-    clangStaticAnalyzerCheckers
-    clangStaticAnalyzerCore
-    clangAnalysis
-    clangRewrite
-    clangAST
-    clangLex
-    clangBasic
-    clangEdit
-    clangLex
-)
-# Turn the clang libnames into absolute path libraries
-# llvm_map_components_to_libnames seems to do this?
-set(REQ_CLANG_LIBRARIES)
-foreach(clangLib ${REQ_CLANG_LIBNAMES})
-    find_library(foundLib_${clangLib} ${clangLib} PATHS ${LLVM_LIBRARY_DIRS})
-    list(APPEND REQ_CLANG_LIBRARIES ${foundLib_${clangLib}})
-endforeach()
-
-message("LLVM defs: ${LLVM_DEFINITIONS}")
-message("LLVM includes: ${LLVM_INCLUDE_DIRS}")
-message("LLVM lib dir: ${LLVM_LIBRARY_DIRS}")
-message("LLVM libs: ${REQ_LLVM_LIBRARIES}")
-message("Clang libs: ${REQ_CLANG_LIBRARIES}")
 
 set(SOURCE_FILES
   ${CMAKE_CURRENT_SOURCE_DIR}/version.cpp
@@ -179,14 +104,16 @@ target_include_directories(csim
   $<INSTALL_INTERFACE:include/>
   PRIVATE
   ${CMAKE_CURRENT_BINARY_DIR}
-  ${LLVM_INCLUDE_DIRS}
 )
 
 target_link_libraries(csim PRIVATE
   libcellml
-  ${REQ_CLANG_LIBRARIES}
-  ${REQ_LLVM_LIBRARIES}
+  LLVMX86CodeGen
+  LLVMExecutionEngine
+  LLVMMCJIT
+  clangCodeGen
   xml2
+  zlib
   ${PLATFORM_LIBS}
 )
 
@@ -212,7 +139,6 @@ if(CSIM_COVERAGE)
 endif()
 
 generate_export_header(csim EXPORT_FILE_NAME ${CSIM_EXPORT_H} BASE_NAME CSIM)
-
 set_source_files_properties(${CSIM_EXPORT_H} PROPERTIES GENERATED TRUE)
 
 export(TARGETS csim FILE csim-exports.cmake)
