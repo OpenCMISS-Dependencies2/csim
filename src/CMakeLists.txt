@@ -47,9 +47,9 @@ configure_file(
   ${CSIM_CONFIG_H}
 )
 
-FIND_PACKAGE(CellML ${CELLML_VERSION} REQUIRED CONFIG)
-FIND_PACKAGE(LibXml2 ${LIBXML2_VERSION} REQUIRED)
-FIND_PACKAGE(ZLIB ${ZLIB_VERSION} REQUIRED)
+find_package(LibCellML ${LIBCELLML_VERSION} REQUIRED CONFIG)
+find_package(LibXml2 ${LIBXML2_VERSION} REQUIRED)
+find_package(ZLIB ${ZLIB_VERSION} REQUIRED)
 
 # Since LLVM 3.5 the cmake files are available in the releases, so consolidate on the "cmake" method now.
 find_package(LLVM ${LLVM_VERSION} REQUIRED CONFIG)
@@ -148,13 +148,31 @@ install(TARGETS csim EXPORT csim-config
   LIBRARY DESTINATION lib
   ARCHIVE DESTINATION lib
 )
-
 install(FILES
   ${API_HEADER_FILES}
   DESTINATION include/csim
 )
 
+file(WRITE ${CMAKE_CURRENT_BINARY_DIR}/csim-config-dependencies.cmake 
+    "include(CMakeFindDependencyMacro)\r\n"
+	"set(${PROJECT_NAME}_IMPORT_PREFIX \${_IMPORT_PREFIX})\r\n"   
+    "find_dependency(LibCellML ${LIBCELLML_VERSION})\r\n"
+    "find_dependency(Clang ${CLANG_VERSION})\r\n"
+    "find_dependency(LLVM ${LLVM_VERSION})\r\n"
+    "find_dependency(ZLIB ${ZLIB_VERSION})\r\n"
+    "find_dependency(LibXml2 ${LIBXML2_VERSION})\r\n"
+    "set(_IMPORT_PREFIX \${${PROJECT_NAME}_IMPORT_PREFIX})"
+)
+
 install(EXPORT csim-config DESTINATION cmake)
+include(CMakePackageConfigHelpers)
+WRITE_BASIC_PACKAGE_VERSION_FILE(${CMAKE_CURRENT_BINARY_DIR}/csim-config-version.cmake
+    COMPATIBILITY AnyNewerVersion)
+install(FILES
+    ${CMAKE_CURRENT_BINARY_DIR}/csim-config-version.cmake
+    ${CMAKE_CURRENT_BINARY_DIR}/csim-config-dependencies.cmake
+    DESTINATION cmake
+)
 
 set(CPACK_PACKAGE_VERSION_MAJOR "${CSIM_VERSION_MAJOR}")
 set(CPACK_PACKAGE_VERSION_MINOR "${CSIM_VERSION_MINOR}")
