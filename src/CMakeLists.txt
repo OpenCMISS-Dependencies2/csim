@@ -47,13 +47,13 @@ configure_file(
   ${CSIM_CONFIG_H}
 )
 
-find_package(LibCellML ${LIBCELLML_VERSION} REQUIRED CONFIG)
+find_package(LibCellML ${LIBCELLML_VERSION} CONFIG REQUIRED)
 find_package(LibXml2 ${LIBXML2_VERSION} REQUIRED)
 find_package(ZLIB ${ZLIB_VERSION} REQUIRED)
 
 # Since LLVM 3.5 the cmake files are available in the releases, so consolidate on the "cmake" method now.
-find_package(LLVM ${LLVM_VERSION} REQUIRED CONFIG)
-find_package(Clang ${CLANG_VERSION} REQUIRED CONFIG)
+find_package(LLVM ${LLVM_VERSION} CONFIG REQUIRED)
+find_package(Clang ${CLANG_VERSION} CONFIG REQUIRED)
 
 if( ${CMAKE_SYSTEM_NAME} STREQUAL "Linux" )
   SET(PLATFORM_LIBS ${PLATFORM_LIBS} "dl" "pthread" "tinfo")
@@ -106,12 +106,13 @@ target_include_directories(csim
   ${CMAKE_CURRENT_BINARY_DIR}
 )
 
-target_link_libraries(csim PRIVATE
+target_link_libraries(csim PUBLIC
   libcellml
   LLVMX86CodeGen
   LLVMExecutionEngine
   LLVMMCJIT
   clangCodeGen
+  PRIVATE
   xml2
   zlib
   ${PLATFORM_LIBS}
@@ -147,6 +148,7 @@ install(TARGETS csim EXPORT csim-config
   RUNTIME DESTINATION bin
   LIBRARY DESTINATION lib
   ARCHIVE DESTINATION lib
+  INCLUDES DESTINATION include
 )
 install(FILES
   ${API_HEADER_FILES}
@@ -157,10 +159,10 @@ file(WRITE ${CMAKE_CURRENT_BINARY_DIR}/csim-config-dependencies.cmake
     "include(CMakeFindDependencyMacro)\r\n"
 	"set(${PROJECT_NAME}_IMPORT_PREFIX \${_IMPORT_PREFIX})\r\n"   
     "find_dependency(LibCellML ${LIBCELLML_VERSION})\r\n"
-    "find_dependency(Clang ${CLANG_VERSION})\r\n"
     "find_dependency(LLVM ${LLVM_VERSION})\r\n"
     "find_dependency(ZLIB ${ZLIB_VERSION})\r\n"
     "find_dependency(LibXml2 ${LIBXML2_VERSION})\r\n"
+    "find_dependency(Clang ${CLANG_VERSION})\r\n"
     "set(_IMPORT_PREFIX \${${PROJECT_NAME}_IMPORT_PREFIX})"
 )
 
