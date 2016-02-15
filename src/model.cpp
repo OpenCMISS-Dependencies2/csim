@@ -17,6 +17,7 @@ limitations under the License.Some license of other
 
 #include "csim/model.h"
 #include "csim/error_codes.h"
+#include "csim/variable_types.h"
 #include "cellml_model_definition.h"
 #include "compiler.h"
 #include "xmlutils.h"
@@ -90,6 +91,13 @@ int Model::setVariableAsOutput(const std::string& variableId)
     CellmlModelDefinition* cellml = static_cast<CellmlModelDefinition*>(mModelDefinition);
     int outputIndex = cellml->setVariableAsOutput(variableId);
     return outputIndex;
+}
+
+unsigned char Model::getVariableType(const std::string& variableId)
+{
+    if (! mModelDefinition) return VariableTypes::UndefinedType;
+    CellmlModelDefinition* cellml = static_cast<CellmlModelDefinition*>(mModelDefinition);
+    return cellml->getVariableType(variableId);
 }
 
 int Model::instantiate(bool verbose, bool debug)

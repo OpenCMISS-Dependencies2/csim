@@ -87,6 +87,18 @@ public:
      int setVariableAsOutput(const std::string& variableId);
 
      /**
+      * Get the type of the specified variable.
+      *
+      * The single bitwise type returned should be used with the csim::VariableTypes to determine if the variable is of a
+      * specific type. e.g., (variableType & csim::StateType) would be true for state variables. A given variable
+      * can have multiple types.
+      *
+      * @param variableId The ID of the variable in the format 'component_name/variable_name'.
+      * @return The bitwise type field of the specified variable. csim::UndefinedType will be returned on error.
+      */
+     unsigned char getVariableType(const std::string& variableId);
+
+     /**
       * Instantiate the current model into an executable function. This method should only be called once all
       * required inputs and outputs have been set. Once a model is instantiated, no further modifications can be made
       * to the inputs and outputs.

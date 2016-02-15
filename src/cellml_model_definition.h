@@ -45,6 +45,18 @@ public:
     int setVariableAsOutput(const std::string& variableId);
 
     /**
+     * Get the type of the specified variable.
+     *
+     * The variable type is a bit field which may include several types depending on the variable. Bitwise and operator
+     * should be used with csim::VariableTypes to check for specific types. e.g., (variableType & csim::StateType).
+     *
+     * @param variableId The ID of the variable in the format 'component_name/variable_name'.
+     * @return The bitwise type definition for the specified variable. The type csim::UndefinedType will be returned
+     * on error.
+     */
+    unsigned char getVariableType(const std::string& variableId);
+
+    /**
      * Instantiate this model defintion into executable coode. Will cause code to be generated and compiled into
      * an executable function.
      * @param compiler The compiler to use for instantiating the model
