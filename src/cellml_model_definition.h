@@ -57,6 +57,18 @@ public:
     unsigned char getVariableType(const std::string& variableId);
 
     /**
+     * Get the index of the specified variable in its role as the specified type.
+     *
+     * Each variable may have multiple types. This will return the index of the given variable for its entry in the
+     * specified role (0-based index).
+     * @param variableId The ID of the variable in the format 'component_name/variable_name'.
+     * @param variableType The role of this variable for which you want the index.
+     * @return The index of the variable in the specified role. Will be <0 if an error occurs.
+     * @see csim::VariableTypes.
+     */
+    int getVariableIndex(const std::string& variableId, unsigned char variableType);
+
+    /**
      * Instantiate this model defintion into executable coode. Will cause code to be generated and compiled into
      * an executable function.
      * @param compiler The compiler to use for instantiating the model

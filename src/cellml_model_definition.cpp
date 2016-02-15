@@ -233,6 +233,25 @@ unsigned char CellmlModelDefinition::getVariableType(const std::string& variable
     return currentTypes;
 }
 
+int CellmlModelDefinition::getVariableIndex(const std::string& variableId, unsigned char variableType)
+{
+    unsigned char vt = getVariableType(variableId);
+    if (vt == csim::UndefinedType)
+    {
+        std::cerr << "CellML Model Definition::getVariableIndex: unable to get the variable type for: "
+                  << variableId << std::endl;
+        return csim::UNDEFINED_VARIABLE_TYPE;
+    }
+    // can now assume everything set up for use
+    if (vt & variableType)
+    {
+        ObjRef<iface::cellml_api::CellMLVariable> sv = findLocalVariable(mCapi, variableId);
+        return mVariableIndices[getVariableUniqueId(sv)][variableType];
+    }
+    std::cerr << "CellML Model Definition::getVariableIndex: no computation target of matching type." << std::endl;
+    return csim::MISMATCHED_COMPUTATION_TARGET;
+}
+
 int CellmlModelDefinition::instantiate(Compiler& compiler)
 {
     std::string codeString = generateCodeForModel(mCapi, mVariableTypes, mVariableIndices,

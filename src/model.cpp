@@ -100,6 +100,13 @@ unsigned char Model::getVariableType(const std::string& variableId)
     return cellml->getVariableType(variableId);
 }
 
+int Model::getVariableIndex(const std::string& variableId, unsigned char variableType)
+{
+    if (! mModelDefinition) return csim::MISSING_MODEL_DEFINTION;
+    CellmlModelDefinition* cellml = static_cast<CellmlModelDefinition*>(mModelDefinition);
+    return cellml->getVariableIndex(variableId, variableType);
+}
+
 int Model::instantiate(bool verbose, bool debug)
 {
     if (! mModelDefinition) return MISSING_MODEL_DEFINTION;
