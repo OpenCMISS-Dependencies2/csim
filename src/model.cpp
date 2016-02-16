@@ -17,6 +17,7 @@ limitations under the License.Some license of other
 
 #include "csim/model.h"
 #include "csim/error_codes.h"
+#include "csim/variable_types.h"
 #include "cellml_model_definition.h"
 #include "compiler.h"
 #include "xmlutils.h"
@@ -32,7 +33,9 @@ Model::Model(const Model &src)
     mModelDefinition = src.mModelDefinition;
     mCompiler = src.mCompiler;
     mInstantiated = src.mInstantiated;
-    mNumberOfStates = 0;
+    mNumberOfStates = src.mNumberOfStates;
+    mNumberOfInputs = src.mNumberOfInputs;
+    mNumberOfOutputs = src.mNumberOfOutputs;
     // FIXME: need to copy the xmldoc?
 }
 
@@ -92,6 +95,20 @@ int Model::setVariableAsOutput(const std::string& variableId)
     return outputIndex;
 }
 
+unsigned char Model::getVariableType(const std::string& variableId)
+{
+    if (! mModelDefinition) return VariableTypes::UndefinedType;
+    CellmlModelDefinition* cellml = static_cast<CellmlModelDefinition*>(mModelDefinition);
+    return cellml->getVariableType(variableId);
+}
+
+int Model::getVariableIndex(const std::string& variableId, unsigned char variableType)
+{
+    if (! mModelDefinition) return csim::MISSING_MODEL_DEFINTION;
+    CellmlModelDefinition* cellml = static_cast<CellmlModelDefinition*>(mModelDefinition);
+    return cellml->getVariableIndex(variableId, variableType);
+}
+
 int Model::instantiate(bool verbose, bool debug)
 {
     if (! mModelDefinition) return MISSING_MODEL_DEFINTION;
@@ -106,7 +123,12 @@ int Model::instantiate(bool verbose, bool debug)
     }
     else compiler = static_cast<Compiler*>(mCompiler);
     int code = cellml->instantiate(*compiler);
-    if (code == CSIM_OK) mInstantiated = true;
+    if (code == CSIM_OK)
+    {
+        mInstantiated = true;
+        mNumberOfInputs = cellml->numberOfInputVariables();
+        mNumberOfOutputs = cellml->numberOfOutputVariables();
+    }
     return code;
 }
 

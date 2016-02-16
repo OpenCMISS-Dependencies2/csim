@@ -75,6 +75,7 @@ set(API_HEADER_FILES
   ${CMAKE_CURRENT_SOURCE_DIR}/api/csim/model.h
   ${CMAKE_CURRENT_SOURCE_DIR}/api/csim/error_codes.h
   ${CMAKE_CURRENT_SOURCE_DIR}/api/csim/executable_functions.h
+  ${CMAKE_CURRENT_SOURCE_DIR}/api/csim/variable_types.h
   ${CMAKE_CURRENT_SOURCE_DIR}/api/csimsbw.h
   ${CSIM_EXPORT_H}
 )

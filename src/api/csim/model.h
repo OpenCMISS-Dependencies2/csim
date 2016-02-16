@@ -87,6 +87,30 @@ public:
      int setVariableAsOutput(const std::string& variableId);
 
      /**
+      * Get the type of the specified variable.
+      *
+      * The single bitwise type returned should be used with the csim::VariableTypes to determine if the variable is of a
+      * specific type. e.g., (variableType & csim::StateType) would be true for state variables. A given variable
+      * can have multiple types.
+      *
+      * @param variableId The ID of the variable in the format 'component_name/variable_name'.
+      * @return The bitwise type field of the specified variable. csim::UndefinedType will be returned on error.
+      */
+     unsigned char getVariableType(const std::string& variableId);
+
+     /**
+      * Get the index of the specified variable in its role as the specified type.
+      *
+      * Each variable may have multiple types. This will return the index of the given variable for its entry in the
+      * specified role (0-based index).
+      * @param variableId The ID of the variable in the format 'component_name/variable_name'.
+      * @param variableType The role of this variable for which you want the index.
+      * @return The index of the variable in the specified role. Will be <0 if an error occurs.
+      * @see csim::VariableTypes.
+      */
+     int getVariableIndex(const std::string& variableId, unsigned char variableType);
+
+     /**
       * Instantiate the current model into an executable function. This method should only be called once all
       * required inputs and outputs have been set. Once a model is instantiated, no further modifications can be made
       * to the inputs and outputs.
@@ -127,6 +151,26 @@ public:
          return mNumberOfStates;
      }
 
+     /**
+      * Will provide the number of variables in this model flagged as input. This is the minimum size of the input
+      * array. The returned number will only make sense after a model is successfully loaded.
+      * @return The number of input variables in this model.
+      */
+     inline int numberOfInputVariables() const
+     {
+         return mNumberOfInputs;
+     }
+
+     /**
+      * Will provide the number of variables in this model flagged as output. This is the minimum size of the output
+      * array. The returned number will only make sense after a model is successfully loaded.
+      * @return The number of output variables in this model.
+      */
+     inline int numberOfOutputVariables() const
+     {
+         return mNumberOfOutputs;
+     }
+
      std::string mapXpathToVariableId(const std::string& xpath,
                                       const std::map<std::string, std::string>& namespaces) const;
 
@@ -137,7 +181,7 @@ private:
     void* mModelDefinition;
     void* mCompiler;
     bool mInstantiated;
-    int mNumberOfStates;
+    int mNumberOfStates, mNumberOfInputs, mNumberOfOutputs;
     XmlDoc* mXmlDoc;
 };
 
