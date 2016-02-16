@@ -86,6 +86,26 @@ public:
         else return -1;
     }
 
+    /**
+     * The number of variables currently flagged as inputs in this model. Will only be "complete" if a model has
+     * successfully been instantiated.
+     * @return The number of input variables in this model.
+     */
+    inline int numberOfInputVariables() const
+    {
+        return mNumberOfInputVariables;
+    }
+
+    /**
+     * The number of variables currently flagged as outputs in this model. Will only be "complete" if a model has
+     * successfully been instantiated.
+     * @return The number of output variables in this model.
+     */
+    inline int numberOfOutputVariables() const
+    {
+        return mNumberOfOutputVariables;
+    }
+
 private:
     std::string mUrl;
     /**

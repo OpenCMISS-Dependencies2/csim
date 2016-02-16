@@ -33,7 +33,9 @@ Model::Model(const Model &src)
     mModelDefinition = src.mModelDefinition;
     mCompiler = src.mCompiler;
     mInstantiated = src.mInstantiated;
-    mNumberOfStates = 0;
+    mNumberOfStates = src.mNumberOfStates;
+    mNumberOfInputs = src.mNumberOfInputs;
+    mNumberOfOutputs = src.mNumberOfOutputs;
     // FIXME: need to copy the xmldoc?
 }
 
@@ -121,7 +123,12 @@ int Model::instantiate(bool verbose, bool debug)
     }
     else compiler = static_cast<Compiler*>(mCompiler);
     int code = cellml->instantiate(*compiler);
-    if (code == CSIM_OK) mInstantiated = true;
+    if (code == CSIM_OK)
+    {
+        mInstantiated = true;
+        mNumberOfInputs = cellml->numberOfInputVariables();
+        mNumberOfOutputs = cellml->numberOfOutputVariables();
+    }
     return code;
 }
 

@@ -151,6 +151,26 @@ public:
          return mNumberOfStates;
      }
 
+     /**
+      * Will provide the number of variables in this model flagged as input. This is the minimum size of the input
+      * array. The returned number will only make sense after a model is successfully loaded.
+      * @return The number of input variables in this model.
+      */
+     inline int numberOfInputVariables() const
+     {
+         return mNumberOfInputs;
+     }
+
+     /**
+      * Will provide the number of variables in this model flagged as output. This is the minimum size of the output
+      * array. The returned number will only make sense after a model is successfully loaded.
+      * @return The number of output variables in this model.
+      */
+     inline int numberOfOutputVariables() const
+     {
+         return mNumberOfOutputs;
+     }
+
      std::string mapXpathToVariableId(const std::string& xpath,
                                       const std::map<std::string, std::string>& namespaces) const;
 
@@ -161,7 +181,7 @@ private:
     void* mModelDefinition;
     void* mCompiler;
     bool mInstantiated;
-    int mNumberOfStates;
+    int mNumberOfStates, mNumberOfInputs, mNumberOfOutputs;
     XmlDoc* mXmlDoc;
 };
 
