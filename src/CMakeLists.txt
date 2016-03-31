@@ -48,12 +48,14 @@ configure_file(
 )
 
 find_package(LibCellML ${LIBCELLML_VERSION} CONFIG REQUIRED)
-find_package(LibXml2 ${LIBXML2_VERSION} REQUIRED)
+find_package(LibXml2 ${LIBXML2_VERSION} CONFIG REQUIRED)
 find_package(ZLIB ${ZLIB_VERSION} REQUIRED)
 
 # Since LLVM 3.5 the cmake files are available in the releases, so consolidate on the "cmake" method now.
 find_package(LLVM ${LLVM_VERSION} CONFIG REQUIRED)
 find_package(Clang ${CLANG_VERSION} CONFIG REQUIRED)
+#message(STATUS "Found LLVM ${LLVM_PACKAGE_VERSION}")
+#message(STATUS "Using LLVMConfig.cmake in: ${LLVM_DIR}")
 
 if( ${CMAKE_SYSTEM_NAME} STREQUAL "Linux" )
   SET(PLATFORM_LIBS ${PLATFORM_LIBS} "dl" "pthread" "tinfo")
@@ -105,6 +107,7 @@ target_include_directories(csim
   $<INSTALL_INTERFACE:include/>
   PRIVATE
   ${CMAKE_CURRENT_BINARY_DIR}
+  ${LLVM_INCLUDE_DIRS}
 )
 
 target_link_libraries(csim PUBLIC
@@ -115,7 +118,7 @@ target_link_libraries(csim PUBLIC
   clangCodeGen
   PRIVATE
   xml2
-  zlib
+  ${ZLIB_LIBRARIES}
   ${PLATFORM_LIBS}
 )
 
