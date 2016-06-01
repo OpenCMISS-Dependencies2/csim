@@ -23,6 +23,19 @@ TEST(SBW, model_string) {
     int length;
     int code = csim_serialiseCellmlFromUrl(
                 TestResources::getLocation(
+                    TestResources::CELLML_SINE_MODEL_RESOURCE),
+                &modelString, &length);
+    EXPECT_EQ(code, 0);
+    EXPECT_EQ(length, 9422);
+    EXPECT_NE(std::string(modelString), "");
+    free(modelString);
+}
+
+TEST(SBW, model_with_imports_string) {
+    char* modelString;
+    int length;
+    int code = csim_serialiseCellmlFromUrl(
+                TestResources::getLocation(
                     TestResources::CELLML_SINE_IMPORTS_MODEL_RESOURCE),
                 &modelString, &length);
     EXPECT_EQ(code, 0);
