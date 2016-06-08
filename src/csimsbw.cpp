@@ -30,7 +30,19 @@ int csim_loadCellml(const char* modelString)
     if (_csim) delete _csim;
     _csim = new CsimWrapper();
     _csim->model = new csim::Model();
-    return _csim->model->loadCellmlModelFromString(modelString);
+    int code = _csim->model->loadCellmlModelFromString(modelString);
+    if (code != csim::CSIM_OK)
+    {
+        std::cerr << "Error loading the model from a string" << std::endl;
+        return CSIM_FAILED;
+    }
+    code = _csim->model->instantiate();
+    if (code != csim::CSIM_OK)
+    {
+        std::cerr << "Error instantiating model" << std::endl;
+        return CSIM_FAILED;
+    }
+    return CSIM_SUCCESS;
 }
 
 int csim_reset()
