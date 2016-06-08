@@ -57,6 +57,18 @@ int XmlDoc::parseDocument(const std::string& url)
     return 0;
 }
 
+int XmlDoc::parseDocumentString(const std::string& ds)
+{
+    xmlDocPtr doc = xmlParseDoc(BAD_CAST ds.c_str());
+    if (doc == NULL)
+    {
+        std::cerr << "Error parsing document from string." << std::endl;
+        return -1;
+    }
+    mXmlDocPtr = static_cast<void*>(doc);
+    return 0;
+}
+
 std::string XmlDoc::dumpString() const
 {
     xmlDocPtr doc = static_cast<xmlDocPtr>(mXmlDocPtr);
@@ -170,3 +182,10 @@ static xmlNodeSetPtr executeXPath(xmlDocPtr doc, const xmlChar* xpathExpr, const
     return results;
 }
 
+int XmlDoc::setXmlBase(const std::string& url)
+{
+    xmlDocPtr doc = static_cast<xmlDocPtr>(mXmlDocPtr);
+    xmlNodePtr rootElement = xmlDocGetRootElement(doc);
+    xmlNodeSetBase(rootElement, BAD_CAST (url.c_str()));
+    return 0;
+}

@@ -75,6 +75,27 @@ int Model::loadCellmlModel(const std::string &url)
     return CSIM_OK;
 }
 
+int Model::loadCellmlModelFromString(const std::string &ms)
+{
+    if (mModelDefinition) delete static_cast<CellmlModelDefinition*>(mModelDefinition);
+    std::cout << "Loading CellML Model from given string." << std::endl;
+    CellmlModelDefinition* cellml = new CellmlModelDefinition();
+    int success = cellml->loadModelFromString(ms);
+    if (success != 0)
+    {
+        std::cerr << "Model::loadCellmlModel: Unable to load the model string." << std::endl;
+        delete cellml;
+        mModelDefinition = NULL;
+        return UNABLE_TO_LOAD_MODEL_STRING;
+    }
+    mModelDefinition = static_cast<void*>(cellml);
+    mNumberOfStates = cellml->numberOfStateVariables();
+    if (mXmlDoc) delete mXmlDoc;
+    mXmlDoc = new XmlDoc();
+    mXmlDoc->parseDocumentString(ms);
+    return CSIM_OK;
+}
+
 int Model::setVariableAsInput(const std::string& variableId)
 {
     if (mInstantiated) return MODEL_ALREADY_INSTANTIATED;

@@ -63,6 +63,13 @@ public:
      int loadCellmlModel(const std::string& url);
 
      /**
+      * Load the CellML model from the given string.
+      * @param modelString The string containing the CellML model.
+      * @return zero on success, non-zero if the model is not able to be loaded.
+      */
+      int loadCellmlModelFromString(const std::string& modelString);
+
+     /**
       * Flag the specified variable as being an input for the purposes of code generation. This implies
       * that the variable will have its value set externally to the CellML model. Variables flagged as inputs will be
       * used via the INPUT array in this model's executable function. Attempting to flag a variable after

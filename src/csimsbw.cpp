@@ -12,10 +12,25 @@
 #define CSIM_SUCCESS 0
 #define CSIM_FAILED 1
 
+// assuming we only deal with one model at a time
+class CsimWrapper {
+public:
+    CsimWrapper() : model(NULL) {}
+    ~CsimWrapper() {
+        if (model) delete model;
+    }
+
+    csim::Model* model;
+};
+
+static CsimWrapper* _csim = NULL;
+
 int csim_loadCellml(const char* modelString)
 {
-
-    return CSIM_SUCCESS;
+    if (_csim) delete _csim;
+    _csim = new CsimWrapper();
+    _csim->model = new csim::Model();
+    return _csim->model->loadCellmlModelFromString(modelString);
 }
 
 int csim_reset()
@@ -71,7 +86,13 @@ int csim_serialiseCellmlFromUrl(const char* url,
                                 char* *outString, int *outLength)
 {
     XmlDoc xml;
-    xml.parseDocument(url);
+    int code = xml.parseDocument(url);
+    if (code != 0)
+    {
+        std::cerr << "Error parsing document at the URL: " << url << std::endl;
+        return CSIM_FAILED;
+    }
+    xml.setXmlBase(url);
     std::string model = xml.dumpString();
     *outLength = model.length();
     *outString = strdup(model.c_str());
@@ -81,7 +102,7 @@ int csim_serialiseCellmlFromUrl(const char* url,
 //! Frees a vector previously allocated by this library.
 void csim_freeVector(void* vector)
 {
-
+    if (vector) free(vector);
 }
 
 //! Frees a matrix previously allocated by this library.

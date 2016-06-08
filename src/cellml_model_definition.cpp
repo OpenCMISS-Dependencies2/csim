@@ -87,6 +87,7 @@ int CellmlModelDefinition::loadModel(const std::string &url)
     std::wstring urlW = s2ws(url);
     ObjRef<iface::cellml_api::CellMLBootstrap> cb = CreateCellMLBootstrap();
     ObjRef<iface::cellml_api::DOMModelLoader> ml = cb->modelLoader();
+    int code;
     try
     {
         ObjRef<iface::cellml_api::Model> model = ml->loadFromURL(urlW);
@@ -94,6 +95,46 @@ int CellmlModelDefinition::loadModel(const std::string &url)
         // we have a model, so we can start grabbing hold of the CellML API objects
         mCapi = new CellmlApiObjects();
         mCapi->model = model;
+        code = instantiateCellmlApiObjects();
+    }
+    catch (...)
+    {
+      std::wcerr << L"Error loading model: " << urlW << std::endl;
+      return -1;
+    }
+    return code;
+}
+
+int CellmlModelDefinition::loadModelFromString(const std::string &ms)
+{
+    std::cout << "Creating CellML Model Definition from the given model string"
+              << std::endl;
+    mUrl = "";
+    std::wstring msW = s2ws(ms);
+    ObjRef<iface::cellml_api::CellMLBootstrap> cb = CreateCellMLBootstrap();
+    ObjRef<iface::cellml_api::DOMModelLoader> ml = cb->modelLoader();
+    int code;
+    try
+    {
+        ObjRef<iface::cellml_api::Model> model = ml->createFromText(msW);
+        model->fullyInstantiateImports();
+        // we have a model, so we can start grabbing hold of the CellML API objects
+        mCapi = new CellmlApiObjects();
+        mCapi->model = model;
+        code = instantiateCellmlApiObjects();
+    }
+    catch (...)
+    {
+      std::wcerr << L"Error loading model from string." << std::endl;
+      return -1;
+    }
+    return code;
+}
+
+int CellmlModelDefinition::instantiateCellmlApiObjects()
+{
+    try
+    {
         // create an annotation set to manage our variable usages
         ObjRef<iface::cellml_services::AnnotationToolService> ats = CreateAnnotationToolService();
         ObjRef<iface::cellml_services::AnnotationSet> as = ats->createAnnotationSet();
@@ -101,7 +142,7 @@ int CellmlModelDefinition::loadModel(const std::string &url)
         // mapping the connections between variables is a very expensive operation, so we want to
         // only do it once and keep hold of the mapping (tracker item 3294)
         ObjRef<iface::cellml_services::CeVASBootstrap> cvbs = CreateCeVASBootstrap();
-        ObjRef<iface::cellml_services::CeVAS> cevas = cvbs->createCeVASForModel(model);
+        ObjRef<iface::cellml_services::CeVAS> cevas = cvbs->createCeVASForModel(mCapi->model);
         std::wstring msg = cevas->modelError();
         if (msg != L"")
         {
@@ -116,7 +157,7 @@ int CellmlModelDefinition::loadModel(const std::string &url)
         try
         {
             cg->useCeVAS(cevas);
-            ObjRef<iface::cellml_services::CodeInformation> cci = cg->generateCode(model);
+            ObjRef<iface::cellml_services::CodeInformation> cci = cg->generateCode(mCapi->model);
             msg = cci->errorMessage();
             if (msg != L"")
             {
@@ -168,7 +209,7 @@ int CellmlModelDefinition::loadModel(const std::string &url)
     }
     catch (...)
     {
-      std::wcerr << L"Error loading model: " << urlW << std::endl;
+      std::wcerr << L"Error instantiating CellML API objects." << std::endl;
       return -1;
     }
     return csim::CSIM_OK;

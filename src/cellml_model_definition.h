@@ -18,6 +18,9 @@ public:
     CellmlModelDefinition();
     ~CellmlModelDefinition();
     int loadModel(const std::string& url);
+    int loadModelFromString(const std::string& modelString);
+    int instantiateCellmlApiObjects();
+
     // TODO:
     //std::string getVariableIdByXpath(const std::string& xpath);
     /**
