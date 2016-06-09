@@ -15,13 +15,17 @@
 // assuming we only deal with one model at a time
 class CsimWrapper {
 public:
-    CsimWrapper() : model(NULL) {}
+    CsimWrapper() : model(NULL), voi(0.0), states(NULL), inputs(NULL), outputs(NULL) {}
     ~CsimWrapper() {
         if (model) delete model;
+        if (states) delete [] states;
+        if (inputs) delete [] inputs;
+        if (outputs) delete [] outputs;
     }
 
     csim::Model* model;
     std::map<std::string, int> inputVariables, outputVariables;
+    double voi, *states, *inputs, *outputs;
 };
 
 static CsimWrapper* _csim = NULL;
@@ -46,6 +50,11 @@ int csim_loadCellml(const char* modelString)
         std::cerr << "Error instantiating model" << std::endl;
         return CSIM_FAILED;
     }
+    _csim->states = new double[_csim->model->numberOfStateVariables()];
+    _csim->inputs = new double[_csim->model->numberOfInputVariables()];
+    _csim->outputs = new double[_csim->model->numberOfOutputVariables()];
+    csim::InitialiseFunction initFunction = _csim->model->getInitialiseFunction();
+    initFunction(_csim->states, _csim->outputs, _csim->inputs);
     return CSIM_SUCCESS;
 }
 
