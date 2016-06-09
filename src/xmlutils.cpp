@@ -130,6 +130,39 @@ std::string XmlDoc::getVariableId(const std::string& xpathExpr, const std::map<s
     return id;
 }
 
+std::vector<std::string> XmlDoc::getVariableIds()
+{
+    std::vector<std::string> variableIds;
+    xmlDocPtr doc = static_cast<xmlDocPtr>(mXmlDocPtr);
+    xmlNodePtr root = xmlDocGetRootElement(doc);
+    xmlNodePtr currentNode = NULL;
+    for (currentNode = root->children; currentNode; currentNode = currentNode->next)
+    {
+        if ((currentNode->type == XML_ELEMENT_NODE) &&
+            (!strcmp((char*)(currentNode->name), "component")))
+        {
+            char* componentName = (char*)xmlGetProp(currentNode, BAD_CAST "name");
+            std::string cname(componentName);
+            cname += "/";
+            xmlFree(componentName);
+            xmlNodePtr node = NULL;
+            for (node = currentNode->children; node; node = node->next)
+            {
+                if ((node->type == XML_ELEMENT_NODE) &&
+                    (!strcmp((char*)(node->name), "variable")))
+                {
+                    char* variableName = (char*)xmlGetProp(node, BAD_CAST "name");
+                    std::string id = cname;
+                    id += std::string(variableName);
+                    xmlFree(variableName);
+                    variableIds.push_back(id);
+                }
+            }
+        }
+    }
+    return variableIds;
+}
+
 static xmlNodeSetPtr executeXPath(xmlDocPtr doc, const xmlChar* xpathExpr, const NamespaceMap& namespaces)
 {
     xmlXPathContextPtr xpathCtx;

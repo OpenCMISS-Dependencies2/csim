@@ -173,7 +173,7 @@ int CellmlModelDefinition::instantiateCellmlApiObjects()
                 return -5;
             }
             mCapi->codeInformation = cci;
-            // flag all state variables and the variable of integration
+            // always flag all state variables and the variable of integration
             ObjRef<iface::cellml_services::ComputationTargetIterator> cti = cci->iterateTargets();
             while (true)
             {

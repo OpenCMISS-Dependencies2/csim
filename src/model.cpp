@@ -130,6 +130,70 @@ int Model::getVariableIndex(const std::string& variableId, unsigned char variabl
     return cellml->getVariableIndex(variableId, variableType);
 }
 
+std::map<std::string, int> Model::setAllVariablesAsInput()
+{
+    std::map<std::string, int> inputVariables;
+    if (mInstantiated)
+    {
+        std::cerr << "Model instantiated, need to set inputs before instantiating"
+                  << std::endl;
+        return inputVariables;
+    }
+    if (! mModelDefinition)
+    {
+        std::cerr << "Missing model definition can't set inputs."
+                  << std::endl;
+        return inputVariables;
+    }
+    // TODO: need to check that we are using a CellML model...
+    CellmlModelDefinition* cellml = static_cast<CellmlModelDefinition*>(mModelDefinition);
+    std::vector<std::string> allVariables = mXmlDoc->getVariableIds();
+    for (auto& id: allVariables)
+    {
+        // several variables in a model can map to the same input variable.
+        int inputIndex = cellml->setVariableAsInput(id);
+        if (inputIndex >= 0)
+        {
+            std::cout << "Input index for " << id << ": " << inputIndex
+                      << std::endl;
+            inputVariables[id] = inputIndex;
+        }
+    }
+    return inputVariables;
+}
+
+std::map<std::string, int> Model::setAllVariablesAsOutput()
+{
+    std::map<std::string, int> outputVariables;
+    if (mInstantiated)
+    {
+        std::cerr << "Model instantiated, need to set outputs before instantiating"
+                  << std::endl;
+        return outputVariables;
+    }
+    if (! mModelDefinition)
+    {
+        std::cerr << "Missing model definition can't set outputs."
+                  << std::endl;
+        return outputVariables;
+    }
+    // TODO: need to check that we are using a CellML model...
+    CellmlModelDefinition* cellml = static_cast<CellmlModelDefinition*>(mModelDefinition);
+    std::vector<std::string> allVariables = mXmlDoc->getVariableIds();
+    for (auto& id: allVariables)
+    {
+        // several variables can map to the same output variable
+        int outputIndex = cellml->setVariableAsOutput(id);
+        if (outputIndex >= 0)
+        {
+            std::cout << "Output index for " << id << ": " << outputIndex
+                      << std::endl;
+            outputVariables[id] = outputIndex;
+        }
+    }
+    return outputVariables;
+}
+
 int Model::instantiate(bool verbose, bool debug)
 {
     if (! mModelDefinition) return MISSING_MODEL_DEFINTION;

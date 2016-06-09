@@ -118,6 +118,36 @@ public:
      int getVariableIndex(const std::string& variableId, unsigned char variableType);
 
      /**
+      * Set all reachable and suitable variables in the model as inputs.
+      *
+      * An alternate usage of a CSim model is to flag all suitable variables in the
+      * model as input variables. This is useful when you simply want to use the model
+      * without knowing a priori the variables of interest. This method will look for
+      * all variables in the top-level model (i.e., reachable via SED-ML XPath
+      * expressions) and set them to inputs if suitable. The input variable IDs will
+      * be returned with their index into the input array.
+      *
+      * @return A map of the variable IDs for the reachable and suitable variables,
+      * and their index in the input array.
+      */
+     std::map<std::string, int> setAllVariablesAsInput();
+
+     /**
+      * Set all reachable and suitable variables in the model as outputs.
+      *
+      * An alternate usage of a CSim model is to flag all suitable variables in the
+      * model as output variables. This is useful when you simply want to use the model
+      * without knowing a priori the variables of interest. This method will look for
+      * all variables in the top-level model (i.e., reachable via SED-ML XPath
+      * expressions) and set them to outputs if suitable. The output variable IDs will
+      * be returned.
+      *
+      * @return A map of the variable IDs for the reachable and suitable variables,
+      * and their index in the output array.
+      */
+     std::map<std::string, int> setAllVariablesAsOutput();
+
+     /**
       * Instantiate the current model into an executable function. This method should only be called once all
       * required inputs and outputs have been set. Once a model is instantiated, no further modifications can be made
       * to the inputs and outputs.

@@ -1,5 +1,5 @@
 #include <iostream>
-#include <vector>
+#include <map>
 #include <cstring>
 
 #include <csimsbw.h>
@@ -21,6 +21,7 @@ public:
     }
 
     csim::Model* model;
+    std::map<std::string, int> inputVariables, outputVariables;
 };
 
 static CsimWrapper* _csim = NULL;
@@ -36,6 +37,9 @@ int csim_loadCellml(const char* modelString)
         std::cerr << "Error loading the model from a string" << std::endl;
         return CSIM_FAILED;
     }
+    // need to flag all the variables before instantiating
+    _csim->inputVariables = _csim->model->setAllVariablesAsInput();
+    _csim->outputVariables = _csim->model->setAllVariablesAsOutput();
     code = _csim->model->instantiate();
     if (code != csim::CSIM_OK)
     {
