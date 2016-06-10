@@ -18,12 +18,16 @@ BEGIN_C_DECLS;
 CSIM_EXPORT int csim_loadCellml(const char* modelString);
 
 CSIM_EXPORT int csim_reset();
+
+// will set the value of the given variable, if possible
 CSIM_EXPORT int csim_setValue(const char* variableId, double value);
 
 // will return a list of all the output variables for the current model
 CSIM_EXPORT int csim_getVariables(char** *outArray, int *outLength);
 
+// get the current value of all the outputs in the current model
 CSIM_EXPORT int csim_getValues(double* *outArray, int *outLength);
+
 CSIM_EXPORT int csim_steadyState();
 CSIM_EXPORT int csim_simulate(
         double initialTime, double startTime, double endTime, int numSteps,

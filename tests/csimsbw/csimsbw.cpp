@@ -8,6 +8,8 @@
 // generated with test resource locations
 #include "test_resources.h"
 
+#define ABS_TOL 1.0e-7
+
 TEST(SBW, say_hello) {
     char* hello;
     int length;
@@ -99,6 +101,7 @@ TEST(SBW, get_variables) {
     EXPECT_EQ(std::string(variables[5]), "main/deriv_approx_initial_value");
     EXPECT_EQ(std::string(variables[9]), "main/x");
     EXPECT_EQ(std::string(variables[15]), "parabolic_approx_sin/kPi_32");
+    EXPECT_EQ(std::string(variables[10]), "parabolic_approx_sin/C");
     csim_freeMatrix((void**)variables, length);
 }
 
@@ -123,4 +126,27 @@ TEST(SBW, get_variables_with_imports) {
     EXPECT_EQ(std::string(variables[3]), "main/sin3");
     EXPECT_EQ(std::string(variables[4]), "main/x");
     csim_freeMatrix((void**)variables, length);
+}
+
+TEST(SBW, get_initial_values) {
+    char* modelString;
+    int length;
+    int code = csim_serialiseCellmlFromUrl(
+                TestResources::getLocation(
+                    TestResources::CELLML_SINE_MODEL_RESOURCE),
+                &modelString, &length);
+    // no point continuing if this fails
+    ASSERT_EQ(code, 0);
+    code = csim_loadCellml(modelString);
+    ASSERT_EQ(code, 0);
+    csim_freeVector(modelString);
+    double* values;
+    code = csim_getValues(&values, &length);
+    EXPECT_EQ(code, 0);
+    EXPECT_EQ(length, 19);
+    // test a few random variable values
+    EXPECT_NEAR(values[0], 0.0, ABS_TOL);
+    EXPECT_NEAR(values[5], 0.0, ABS_TOL);
+    EXPECT_NEAR(values[10], 0.75, ABS_TOL);
+    csim_freeVector(values);
 }

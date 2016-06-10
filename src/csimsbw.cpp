@@ -15,18 +15,22 @@
 // assuming we only deal with one model at a time
 class CsimWrapper {
 public:
-    CsimWrapper() : model(NULL), voi(0.0), states(NULL), inputs(NULL), outputs(NULL) {}
+    CsimWrapper() : initFunction(NULL), modelFunction(NULL), model(NULL),
+        voi(0.0), states(NULL), rates(NULL), inputs(NULL), outputs(NULL) {}
     ~CsimWrapper() {
         if (model) delete model;
         if (states) delete [] states;
+        if (rates) delete [] rates;
         if (inputs) delete [] inputs;
         if (outputs) delete [] outputs;
     }
 
+    csim::InitialiseFunction initFunction;
+    csim::ModelFunction modelFunction;
     csim::Model* model;
     std::map<std::string, int> inputVariables;
     std::map<std::string, int> outputVariables;
-    double voi, *states, *inputs, *outputs;
+    double voi, *states, *rates, *inputs, *outputs;
 };
 
 static CsimWrapper* _csim = NULL;
@@ -54,6 +58,7 @@ int csim_loadCellml(const char* modelString)
     if (_csim->model->numberOfStateVariables() > 0)
     {
         _csim->states = new double[_csim->model->numberOfStateVariables()];
+        _csim->rates = new double[_csim->model->numberOfStateVariables()];
     }
     if (_csim->model->numberOfOutputVariables() > 0)
     {
@@ -63,8 +68,11 @@ int csim_loadCellml(const char* modelString)
     {
         _csim->outputs = new double[_csim->model->numberOfOutputVariables()];
     }
-    csim::InitialiseFunction initFunction = _csim->model->getInitialiseFunction();
-    initFunction(_csim->states, _csim->outputs, _csim->inputs);
+    _csim->initFunction = _csim->model->getInitialiseFunction();
+    _csim->initFunction(_csim->states, _csim->outputs, _csim->inputs);
+    _csim->modelFunction = _csim->model->getModelFunction();
+    _csim->modelFunction(_csim->voi, _csim->states, _csim->rates, _csim->outputs,
+                         _csim->inputs);
     return CSIM_SUCCESS;
 }
 
@@ -75,6 +83,12 @@ int csim_reset()
 
 int csim_setValue(const char* variableId, double value)
 {
+    if (_csim->inputVariables.count(variableId) == 0)
+    {
+        return CSIM_FAILED;
+    }
+    int index = _csim->inputVariables[variableId];
+    _csim->inputs[index] = value;
     return CSIM_SUCCESS;
 }
 
@@ -100,6 +114,15 @@ int csim_getVariables(char** *outArray, int *outLength)
 
 int csim_getValues(double* *outArray, int *outLength)
 {
+    int length = _csim->outputVariables.size();
+    double* values = (double*)malloc(sizeof(double)*length);
+    int i = 0;
+    for (const auto& ov: _csim->outputVariables)
+    {
+        values[i++] = _csim->outputs[ov.second];
+    }
+    *outLength = length;
+    *outArray = values;
     return CSIM_SUCCESS;
 }
 
