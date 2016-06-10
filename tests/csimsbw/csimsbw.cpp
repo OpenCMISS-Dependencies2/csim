@@ -173,3 +173,62 @@ TEST(SBW, get_initial_values_import) {
     EXPECT_NEAR(values[4], 0.0, ABS_TOL);
     csim_freeVector(values);
 }
+
+TEST(SBW, set_value) {
+    char* modelString;
+    int length;
+    int code = csim_serialiseCellmlFromUrl(
+                TestResources::getLocation(
+                    TestResources::CELLML_SINE_MODEL_RESOURCE),
+                &modelString, &length);
+    // no point continuing if this fails
+    ASSERT_EQ(code, 0);
+    code = csim_loadCellml(modelString);
+    ASSERT_EQ(code, 0);
+    csim_freeVector(modelString);
+    double* values;
+    // get the initial values
+    code = csim_getValues(&values, &length);
+    EXPECT_EQ(code, 0);
+    EXPECT_EQ(length, 19);
+    // test a few random variable values
+    EXPECT_NEAR(values[0], 0.0, ABS_TOL);
+    EXPECT_NEAR(values[5], 0.0, ABS_TOL);
+    EXPECT_NEAR(values[10], 0.75, ABS_TOL);
+    csim_freeVector(values);
+    // and now we should be able to set the value of the input variables
+    code = csim_setValue("main/deriv_approx_initial_value", 123.456);
+    EXPECT_EQ(code, 0);
+    code = csim_setValue("parabolic_approx_sin/C", 987.654);
+    EXPECT_EQ(code, 0);
+    code = csim_getValues(&values, &length);
+    EXPECT_NEAR(values[5], 123.456, ABS_TOL);
+    EXPECT_NEAR(values[10], 987.654, ABS_TOL);
+    csim_freeVector(values);
+}
+
+TEST(SBW, set_value_import) {
+    char* modelString;
+    int length;
+    int code = csim_serialiseCellmlFromUrl(
+                TestResources::getLocation(
+                    TestResources::CELLML_SINE_IMPORTS_MODEL_RESOURCE),
+                &modelString, &length);
+    // no point continuing if this fails
+    ASSERT_EQ(code, 0);
+    code = csim_loadCellml(modelString);
+    ASSERT_EQ(code, 0);
+    csim_freeVector(modelString);
+    double* values;
+    code = csim_getValues(&values, &length);
+    EXPECT_EQ(code, 0);
+    EXPECT_EQ(length, 5);
+    // test a few random variable values
+    EXPECT_NEAR(values[1], 0.0, ABS_TOL);
+    EXPECT_NEAR(values[3], 0.0, ABS_TOL);
+    EXPECT_NEAR(values[4], 0.0, ABS_TOL);
+    csim_freeVector(values);
+    // try setting a variable (there are no inputs in this model)
+    code = csim_setValue("main/sin1", 123.4);
+    EXPECT_NE(code, 0);
+}

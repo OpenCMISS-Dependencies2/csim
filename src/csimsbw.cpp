@@ -71,8 +71,6 @@ int csim_loadCellml(const char* modelString)
     _csim->initFunction = _csim->model->getInitialiseFunction();
     _csim->initFunction(_csim->states, _csim->outputs, _csim->inputs);
     _csim->modelFunction = _csim->model->getModelFunction();
-    _csim->modelFunction(_csim->voi, _csim->states, _csim->rates, _csim->outputs,
-                         _csim->inputs);
     return CSIM_SUCCESS;
 }
 
@@ -114,6 +112,9 @@ int csim_getVariables(char** *outArray, int *outLength)
 
 int csim_getValues(double* *outArray, int *outLength)
 {
+    // make sure we are up-to-date
+    _csim->modelFunction(_csim->voi, _csim->states, _csim->rates, _csim->outputs,
+                         _csim->inputs);
     int length = _csim->outputVariables.size();
     double* values = (double*)malloc(sizeof(double)*length);
     int i = 0;
