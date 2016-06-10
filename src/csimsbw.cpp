@@ -24,7 +24,8 @@ public:
     }
 
     csim::Model* model;
-    std::map<std::string, int> inputVariables, outputVariables;
+    std::map<std::string, int> inputVariables;
+    std::map<std::string, int> outputVariables;
     double voi, *states, *inputs, *outputs;
 };
 
@@ -50,9 +51,18 @@ int csim_loadCellml(const char* modelString)
         std::cerr << "Error instantiating model" << std::endl;
         return CSIM_FAILED;
     }
-    _csim->states = new double[_csim->model->numberOfStateVariables()];
-    _csim->inputs = new double[_csim->model->numberOfInputVariables()];
-    _csim->outputs = new double[_csim->model->numberOfOutputVariables()];
+    if (_csim->model->numberOfStateVariables() > 0)
+    {
+        _csim->states = new double[_csim->model->numberOfStateVariables()];
+    }
+    if (_csim->model->numberOfOutputVariables() > 0)
+    {
+        _csim->inputs = new double[_csim->model->numberOfInputVariables()];
+    }
+    if (_csim->model->numberOfInputVariables() > 0)
+    {
+        _csim->outputs = new double[_csim->model->numberOfOutputVariables()];
+    }
     csim::InitialiseFunction initFunction = _csim->model->getInitialiseFunction();
     initFunction(_csim->states, _csim->outputs, _csim->inputs);
     return CSIM_SUCCESS;
@@ -70,6 +80,21 @@ int csim_setValue(const char* variableId, double value)
 
 int csim_getVariables(char** *outArray, int *outLength)
 {
+    // can't use number of outputs directly as variables can be repeated.
+    //int length = _csim->model->numberOfOutputVariables();
+    int length = _csim->outputVariables.size();
+    std::cout << "number output = " << length << std::endl;
+    char** variables = (char**)malloc(sizeof(char*)*length);
+    char** v = variables;
+    for (const auto& ov: _csim->outputVariables)
+    {
+        //std::cout << "Adding variable " << i << "; with value: " << ov.first << std::endl;
+        char *s = strdup(ov.first.c_str());
+        *v = s;
+        v++;
+    }
+    *outLength = length;
+    *outArray = variables;
     return CSIM_SUCCESS;
 }
 
@@ -133,5 +158,9 @@ void csim_freeVector(void* vector)
 //! Frees a matrix previously allocated by this library.
 void csim_freeMatrix(void** matrix, int numRows)
 {
-
+    if (matrix)
+    {
+        for (int i=0; i<numRows; ++i) free(matrix[i]);
+    }
+    free(matrix);
 }

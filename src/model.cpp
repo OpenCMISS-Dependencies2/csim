@@ -148,7 +148,7 @@ std::map<std::string, int> Model::setAllVariablesAsInput()
     // TODO: need to check that we are using a CellML model...
     CellmlModelDefinition* cellml = static_cast<CellmlModelDefinition*>(mModelDefinition);
     std::vector<std::string> allVariables = mXmlDoc->getVariableIds();
-    for (auto& id: allVariables)
+    for (const auto& id: allVariables)
     {
         // several variables in a model can map to the same input variable.
         int inputIndex = cellml->setVariableAsInput(id);
@@ -180,7 +180,7 @@ std::map<std::string, int> Model::setAllVariablesAsOutput()
     // TODO: need to check that we are using a CellML model...
     CellmlModelDefinition* cellml = static_cast<CellmlModelDefinition*>(mModelDefinition);
     std::vector<std::string> allVariables = mXmlDoc->getVariableIds();
-    for (auto& id: allVariables)
+    for (const auto& id: allVariables)
     {
         // several variables can map to the same output variable
         int outputIndex = cellml->setVariableAsOutput(id);

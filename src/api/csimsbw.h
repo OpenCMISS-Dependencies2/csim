@@ -14,10 +14,15 @@
 // C interface
 BEGIN_C_DECLS;
 
+// set the given model as the current model and initialise everything
 CSIM_EXPORT int csim_loadCellml(const char* modelString);
+
 CSIM_EXPORT int csim_reset();
 CSIM_EXPORT int csim_setValue(const char* variableId, double value);
+
+// will return a list of all the output variables for the current model
 CSIM_EXPORT int csim_getVariables(char** *outArray, int *outLength);
+
 CSIM_EXPORT int csim_getValues(double* *outArray, int *outLength);
 CSIM_EXPORT int csim_steadyState();
 CSIM_EXPORT int csim_simulate(
