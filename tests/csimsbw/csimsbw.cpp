@@ -150,3 +150,26 @@ TEST(SBW, get_initial_values) {
     EXPECT_NEAR(values[10], 0.75, ABS_TOL);
     csim_freeVector(values);
 }
+
+TEST(SBW, get_initial_values_import) {
+    char* modelString;
+    int length;
+    int code = csim_serialiseCellmlFromUrl(
+                TestResources::getLocation(
+                    TestResources::CELLML_SINE_IMPORTS_MODEL_RESOURCE),
+                &modelString, &length);
+    // no point continuing if this fails
+    ASSERT_EQ(code, 0);
+    code = csim_loadCellml(modelString);
+    ASSERT_EQ(code, 0);
+    csim_freeVector(modelString);
+    double* values;
+    code = csim_getValues(&values, &length);
+    EXPECT_EQ(code, 0);
+    EXPECT_EQ(length, 5);
+    // test a few random variable values
+    EXPECT_NEAR(values[1], 0.0, ABS_TOL);
+    EXPECT_NEAR(values[3], 0.0, ABS_TOL);
+    EXPECT_NEAR(values[4], 0.0, ABS_TOL);
+    csim_freeVector(values);
+}
