@@ -17,6 +17,7 @@ BEGIN_C_DECLS;
 // set the given model as the current model and initialise everything
 CSIM_EXPORT int csim_loadCellml(const char* modelString);
 
+// reset the model back to initial state (i.e., prior to any simulation or set value)
 CSIM_EXPORT int csim_reset();
 
 // will set the value of the given variable, if possible

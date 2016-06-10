@@ -289,3 +289,54 @@ TEST(SBW, one_step_import) {
     csim_freeVector(values);
 }
 
+TEST(SBW, reset) {
+    char* modelString;
+    int length;
+    int code = csim_serialiseCellmlFromUrl(
+                TestResources::getLocation(
+                    TestResources::CELLML_SINE_MODEL_RESOURCE),
+                &modelString, &length);
+    // no point continuing if this fails
+    ASSERT_EQ(code, 0);
+    code = csim_loadCellml(modelString);
+    ASSERT_EQ(code, 0);
+    csim_freeVector(modelString);
+    double* values;
+    // simulate a bit
+    code = csim_setTolerances(1.0, 1.0, 10);
+    code = csim_oneStep(1.5);
+    // reset and check the outputs are back to the same
+    code = csim_reset();
+    EXPECT_EQ(code, 0);
+    code = csim_getValues(&values, &length);
+    EXPECT_NEAR(values[0], 0.0, ABS_TOL);
+    EXPECT_NEAR(values[5], 0.0, ABS_TOL);
+    EXPECT_NEAR(values[10], 0.75, ABS_TOL);
+    csim_freeVector(values);
+}
+
+TEST(SBW, reset_import) {
+    char* modelString;
+    int length;
+    int code = csim_serialiseCellmlFromUrl(
+                TestResources::getLocation(
+                    TestResources::CELLML_SINE_IMPORTS_MODEL_RESOURCE),
+                &modelString, &length);
+    // no point continuing if this fails
+    ASSERT_EQ(code, 0);
+    code = csim_loadCellml(modelString);
+    ASSERT_EQ(code, 0);
+    csim_freeVector(modelString);
+    double* values;
+    code = csim_setTolerances(1.0, 1.0, 10);
+    code = csim_oneStep(1.5);
+    // reset and check the outputs
+    code = csim_reset();
+    EXPECT_EQ(code, 0);
+    code = csim_getValues(&values, &length);
+    EXPECT_NEAR(values[1], 0.0, ABS_TOL);
+    EXPECT_NEAR(values[3], 0.0, ABS_TOL);
+    EXPECT_NEAR(values[4], 0.0, ABS_TOL);
+    csim_freeVector(values);
+}
+

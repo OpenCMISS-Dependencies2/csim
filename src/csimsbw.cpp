@@ -35,6 +35,54 @@ public:
     double voi, *states, *rates, *inputs, *outputs;
     int maxSteps; // currently used to define how many steps to take internally
 
+    struct
+    {
+        double voi;
+        std::vector<double> states, rates, inputs, outputs;
+    } cache;
+
+    int cacheState()
+    {
+        cache.voi = voi;
+        cache.inputs.clear();
+        cache.outputs.clear();
+        cache.states.clear();
+        cache.rates.clear();
+        for (int i=0;i<model->numberOfStateVariables();++i)
+        {
+            cache.states.push_back(states[i]);
+            cache.rates.push_back(rates[i]);
+        }
+        for (int i=0;i<model->numberOfOutputVariables();++i)
+        {
+            cache.outputs.push_back(outputs[i]);
+        }
+        for (int i=0;i<model->numberOfInputVariables();++i)
+        {
+            cache.inputs.push_back(inputs[i]);
+        }
+        return CSIM_SUCCESS;
+    }
+
+    int popCache()
+    {
+        voi = cache.voi;
+        for (int i=0;i<model->numberOfStateVariables();++i)
+        {
+            states[i] = cache.states[i];
+            rates[i] = cache.rates[i];
+        }
+        for (int i=0;i<model->numberOfOutputVariables();++i)
+        {
+            outputs[i] = cache.outputs[i];
+        }
+        for (int i=0;i<model->numberOfInputVariables();++i)
+        {
+            inputs[i] = cache.inputs[i];
+        }
+        return CSIM_SUCCESS;
+    }
+
     int integrate(double tOut)
     {
         int n = model->numberOfStateVariables();
@@ -92,11 +140,15 @@ int csim_loadCellml(const char* modelString)
     _csim->initFunction = _csim->model->getInitialiseFunction();
     _csim->initFunction(_csim->states, _csim->outputs, _csim->inputs);
     _csim->modelFunction = _csim->model->getModelFunction();
+    _csim->modelFunction(_csim->voi, _csim->states, _csim->rates, _csim->outputs,
+                         _csim->inputs);
+    _csim->cacheState();
     return CSIM_SUCCESS;
 }
 
 int csim_reset()
 {
+    _csim->popCache();
     return CSIM_SUCCESS;
 }
 
