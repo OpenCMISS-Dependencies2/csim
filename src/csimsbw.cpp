@@ -16,7 +16,9 @@
 class CsimWrapper {
 public:
     CsimWrapper() : initFunction(NULL), modelFunction(NULL), model(NULL),
-        voi(0.0), states(NULL), rates(NULL), inputs(NULL), outputs(NULL) {}
+        voi(0.0), states(NULL), rates(NULL), inputs(NULL), outputs(NULL),
+        maxSteps(1)
+    {}
     ~CsimWrapper() {
         if (model) delete model;
         if (states) delete [] states;
@@ -31,6 +33,25 @@ public:
     std::map<std::string, int> inputVariables;
     std::map<std::string, int> outputVariables;
     double voi, *states, *rates, *inputs, *outputs;
+    int maxSteps; // currently used to define how many steps to take internally
+
+    int integrate(double tOut)
+    {
+        int n = model->numberOfStateVariables();
+        double interval = tOut - voi;
+        double step = interval / ((double)maxSteps);
+        for (int j=0; j<maxSteps; ++j)
+        {
+            voi += step;
+            modelFunction(voi, states, rates, outputs, inputs);
+            for (int i=0; i<n; ++i)
+            {
+                states[i] += rates[i]*step;
+                std::cout << "time: " << voi << "; state[" << i << "] = " << states[i] << std::endl;
+            }
+        }
+        return CSIM_SUCCESS;
+    }
 };
 
 static CsimWrapper* _csim = NULL;
@@ -141,11 +162,14 @@ int csim_simulate(
 
 int csim_oneStep(double step)
 {
+    double final = _csim->voi + step;
+    _csim->integrate(final);
     return CSIM_SUCCESS;
 }
 
 int csim_setTolerances(double aTol, double rTol, int maxSteps)
 {
+    _csim->maxSteps = maxSteps;
     return CSIM_SUCCESS;
 }
 

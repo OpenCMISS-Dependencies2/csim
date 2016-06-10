@@ -34,8 +34,13 @@ CSIM_EXPORT int csim_steadyState();
 CSIM_EXPORT int csim_simulate(
         double initialTime, double startTime, double endTime, int numSteps,
         double** *outMatrix, int* outRows, int *outCols);
+
+// simulate from the current value of the VoI to Voi + step.
 CSIM_EXPORT int csim_oneStep(double step);
+
+// Currently only using the maxSteps
 CSIM_EXPORT int csim_setTolerances(double aTol, double rTol, int maxSteps);
+
 CSIM_EXPORT int csim_sayHello(char* *outString, int *outLength);
 CSIM_EXPORT int csim_serialiseCellmlFromUrl(const char* url,
                                             char* *outString, int *outLength);

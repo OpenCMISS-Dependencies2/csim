@@ -1,6 +1,7 @@
 #include "gtest/gtest.h"
 
 #include <string>
+#include <cmath>
 
 #include "csimsbw.h"
 #include "csim/error_codes.h"
@@ -9,6 +10,7 @@
 #include "test_resources.h"
 
 #define ABS_TOL 1.0e-7
+#define LOOSE_TOL 1.0e-1
 
 TEST(SBW, say_hello) {
     char* hello;
@@ -231,4 +233,33 @@ TEST(SBW, set_value_import) {
     // try setting a variable (there are no inputs in this model)
     code = csim_setValue("main/sin1", 123.4);
     EXPECT_NE(code, 0);
+}
+
+TEST(SBW, one_step) {
+    char* modelString;
+    int length;
+    int code = csim_serialiseCellmlFromUrl(
+                TestResources::getLocation(
+                    TestResources::CELLML_SINE_MODEL_RESOURCE),
+                &modelString, &length);
+    // no point continuing if this fails
+    ASSERT_EQ(code, 0);
+    code = csim_loadCellml(modelString);
+    ASSERT_EQ(code, 0);
+    csim_freeVector(modelString);
+    double* values;
+    // get the initial values
+    code = csim_getValues(&values, &length);
+    EXPECT_EQ(code, 0);
+    EXPECT_EQ(length, 19);
+    csim_freeVector(values);
+    code = csim_setTolerances(1.0, 1.0, 10);
+    code = csim_oneStep(1.5);
+    EXPECT_EQ(code, 0);
+    // check the outputs
+    code = csim_getValues(&values, &length);
+    EXPECT_NEAR(values[9], 1.5, ABS_TOL); // main/x
+    EXPECT_NEAR(values[0], sin(1.5), ABS_TOL); // actual_sin/sin
+    EXPECT_NEAR(values[2], sin(1.5), LOOSE_TOL); // deriv_approx_sin/sin
+    csim_freeVector(values);
 }
