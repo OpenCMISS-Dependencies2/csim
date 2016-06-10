@@ -263,3 +263,29 @@ TEST(SBW, one_step) {
     EXPECT_NEAR(values[2], sin(1.5), LOOSE_TOL); // deriv_approx_sin/sin
     csim_freeVector(values);
 }
+
+TEST(SBW, one_step_import) {
+    char* modelString;
+    int length;
+    int code = csim_serialiseCellmlFromUrl(
+                TestResources::getLocation(
+                    TestResources::CELLML_SINE_IMPORTS_MODEL_RESOURCE),
+                &modelString, &length);
+    // no point continuing if this fails
+    ASSERT_EQ(code, 0);
+    code = csim_loadCellml(modelString);
+    ASSERT_EQ(code, 0);
+    csim_freeVector(modelString);
+    double* values;
+    code = csim_setTolerances(1.0, 1.0, 10);
+    code = csim_oneStep(1.5);
+    EXPECT_EQ(code, 0);
+    // check the outputs
+    code = csim_getValues(&values, &length);
+    EXPECT_NEAR(values[4], 1.5, ABS_TOL); // main/x
+    EXPECT_NEAR(values[1], sin(1.5), ABS_TOL); // main/sin1 (actual sine)
+    EXPECT_NEAR(values[2], sin(1.5), LOOSE_TOL); // main/sin2 (deriv approx)
+    EXPECT_NEAR(values[3], sin(1.5), LOOSE_TOL); // main/sin3 (parabolic approx)
+    csim_freeVector(values);
+}
+
