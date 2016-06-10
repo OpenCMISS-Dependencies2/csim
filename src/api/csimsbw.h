@@ -28,7 +28,9 @@ CSIM_EXPORT int csim_getVariables(char** *outArray, int *outLength);
 // get the current value of all the outputs in the current model
 CSIM_EXPORT int csim_getValues(double* *outArray, int *outLength);
 
+// Not implemented.
 CSIM_EXPORT int csim_steadyState();
+
 CSIM_EXPORT int csim_simulate(
         double initialTime, double startTime, double endTime, int numSteps,
         double** *outMatrix, int* outRows, int *outCols);

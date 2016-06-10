@@ -129,7 +129,7 @@ int csim_getValues(double* *outArray, int *outLength)
 
 int csim_steadyState()
 {
-    return CSIM_SUCCESS;
+    return CSIM_FAILED;
 }
 
 int csim_simulate(
