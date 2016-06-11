@@ -183,20 +183,24 @@ int csim_getVariables(char** *outArray, int *outLength)
     return CSIM_SUCCESS;
 }
 
-int csim_getValues(double* *outArray, int *outLength)
+double* _getValues(int* length)
 {
-    // make sure we are up-to-date
-    _csim->modelFunction(_csim->voi, _csim->states, _csim->rates, _csim->outputs,
-                         _csim->inputs);
-    int length = _csim->outputVariables.size();
-    double* values = (double*)malloc(sizeof(double)*length);
+    *length = _csim->outputVariables.size();
+    double* values = (double*)malloc(sizeof(double)*(*length));
     int i = 0;
     for (const auto& ov: _csim->outputVariables)
     {
         values[i++] = _csim->outputs[ov.second];
     }
-    *outLength = length;
-    *outArray = values;
+    return values;
+}
+
+int csim_getValues(double* *outArray, int *outLength)
+{
+    // make sure we are up-to-date
+    _csim->modelFunction(_csim->voi, _csim->states, _csim->rates, _csim->outputs,
+                         _csim->inputs);
+    *outArray = _getValues(outLength);
     return CSIM_SUCCESS;
 }
 
@@ -211,34 +215,23 @@ int csim_simulate(
 {
     int length = _csim->outputVariables.size();
     int nData = numSteps + 1;
-    double** data = (double**)malloc(sizeof(double*)*length);
-    for (int i=0; i<length; ++i) data[i] = (double*)malloc(sizeof(double)*nData);
+    double** data = (double**)malloc(sizeof(double*)*nData);
+    //for (int i=0; i<length; ++i) data[i] = (double*)malloc(sizeof(double)*nData);
     // set the initial time
     _csim->voi = initialTime;
     // step to the start time
     _csim->integrate(startTime);
     // grab the values
-    int i = 0;
-    for (const auto& ov: _csim->outputVariables)
-    {
-        data[i++][0] = _csim->outputs[ov.second];
-        //std::cout << " " << data[i-1][0];
-    }
+    data[0] = _getValues(&length);
     //std::cout << std::endl;
     double dt = (endTime - startTime) / ((double)numSteps);
     for (int n=1; n<=numSteps; ++n)
     {
         csim_oneStep(dt);
-        i = 0;
-        for (const auto& ov: _csim->outputVariables)
-        {
-            data[i++][n] = _csim->outputs[ov.second];
-            //std::cout << " " << data[i-1][n];
-        }
-        //std::cout << std::endl;
+        data[n] = _getValues(&length);
     }
-    *outCols = nData;
-    *outRows = length;
+    *outCols = length;
+    *outRows = nData;
     *outMatrix = data;
     return CSIM_SUCCESS;
 }

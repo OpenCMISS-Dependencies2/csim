@@ -356,18 +356,18 @@ TEST(SBW, simulate_import) {
     double** values;
     int nData;
     code = csim_setTolerances(1.0, 1.0, 10);
-    code = csim_simulate(0.0, 0.0, 7.0, 8, &values, &length, &nData);
+    code = csim_simulate(0.0, 0.0, 7.0, 8, &values, &nData, &length);
     EXPECT_EQ(code, 0);
     EXPECT_EQ(length, 5);
     EXPECT_EQ(nData, 9); // 8+1
     // check the outputs
-    EXPECT_NEAR(values[4][8], 7.0, ABS_TOL); // main/x
-    EXPECT_NEAR(values[1][4], sin(3.5), ABS_TOL); // main/sin1 (actual sine)
-    EXPECT_NEAR(values[1][8], sin(7.0), ABS_TOL); // main/sin1 (actual sine)
-    EXPECT_NEAR(values[2][4], sin(3.5), LOOSE_TOL); // main/sin2 (deriv approx)
-    EXPECT_NEAR(values[2][8], sin(7.0), LOOSE_TOL); // main/sin2 (deriv approx)
-    EXPECT_NEAR(values[3][4], sin(3.5), LOOSE_TOL); // main/sin3 (parabolic approx)
-    EXPECT_NEAR(values[3][8], sin(7.0), VERY_LOOSE_TOL); // main/sin3 (parabolic approx)
+    EXPECT_NEAR(values[8][4], 7.0, ABS_TOL); // main/x
+    EXPECT_NEAR(values[4][1], sin(3.5), ABS_TOL); // main/sin1 (actual sine)
+    EXPECT_NEAR(values[8][1], sin(7.0), ABS_TOL); // main/sin1 (actual sine)
+    EXPECT_NEAR(values[4][2], sin(3.5), LOOSE_TOL); // main/sin2 (deriv approx)
+    EXPECT_NEAR(values[8][2], sin(7.0), LOOSE_TOL); // main/sin2 (deriv approx)
+    EXPECT_NEAR(values[4][3], sin(3.5), LOOSE_TOL); // main/sin3 (parabolic approx)
+    EXPECT_NEAR(values[8][3], sin(7.0), VERY_LOOSE_TOL); // main/sin3 (parabolic approx)
     csim_freeMatrix((void**)values, length);
 }
 
@@ -391,14 +391,14 @@ TEST(SBW, simulate_import_delayed_start) {
     EXPECT_EQ(length, 5);
     EXPECT_EQ(nData, 5); // 4+1
     // check the outputs - need looser tolerances due to that big step at the start.
-    EXPECT_NEAR(values[4][0], 3.5, ABS_TOL); // main/x
+    EXPECT_NEAR(values[0][4], 3.5, ABS_TOL); // main/x
     EXPECT_NEAR(values[4][4], 7.0, ABS_TOL); // main/x
-    EXPECT_NEAR(values[1][0], sin(3.5), ABS_TOL); // main/sin1 (actual sine)
-    EXPECT_NEAR(values[1][4], sin(7.0), ABS_TOL); // main/sin1 (actual sine)
-    EXPECT_NEAR(values[2][0], sin(3.5), LOOSE_TOL); // main/sin2 (deriv approx)
-    EXPECT_NEAR(values[2][4], sin(7.0), VERY_LOOSE_TOL); // main/sin2 (deriv approx)
-    EXPECT_NEAR(values[3][0], sin(3.5), LOOSE_TOL); // main/sin3 (parabolic approx)
-    EXPECT_NEAR(values[3][4], sin(7.0), VERY_LOOSE_TOL); // main/sin3 (parabolic approx)
+    EXPECT_NEAR(values[0][1], sin(3.5), ABS_TOL); // main/sin1 (actual sine)
+    EXPECT_NEAR(values[4][1], sin(7.0), ABS_TOL); // main/sin1 (actual sine)
+    EXPECT_NEAR(values[0][2], sin(3.5), LOOSE_TOL); // main/sin2 (deriv approx)
+    EXPECT_NEAR(values[4][2], sin(7.0), VERY_LOOSE_TOL); // main/sin2 (deriv approx)
+    EXPECT_NEAR(values[0][3], sin(3.5), LOOSE_TOL); // main/sin3 (parabolic approx)
+    EXPECT_NEAR(values[4][3], sin(7.0), VERY_LOOSE_TOL); // main/sin3 (parabolic approx)
     csim_freeMatrix((void**)values, length);
 }
 
