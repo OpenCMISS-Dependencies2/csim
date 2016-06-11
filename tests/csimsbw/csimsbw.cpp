@@ -371,3 +371,34 @@ TEST(SBW, simulate_import) {
     csim_freeMatrix((void**)values, length);
 }
 
+TEST(SBW, simulate_import_delayed_start) {
+    char* modelString;
+    int length;
+    int code = csim_serialiseCellmlFromUrl(
+                TestResources::getLocation(
+                    TestResources::CELLML_SINE_IMPORTS_MODEL_RESOURCE),
+                &modelString, &length);
+    // no point continuing if this fails
+    ASSERT_EQ(code, 0);
+    code = csim_loadCellml(modelString);
+    ASSERT_EQ(code, 0);
+    csim_freeVector(modelString);
+    double** values;
+    int nData;
+    code = csim_setTolerances(1.0, 1.0, 10);
+    code = csim_simulate(0.0, 3.5, 7.0, 4, &values, &length, &nData);
+    EXPECT_EQ(code, 0);
+    EXPECT_EQ(length, 5);
+    EXPECT_EQ(nData, 5); // 4+1
+    // check the outputs - need looser tolerances due to that big step at the start.
+    EXPECT_NEAR(values[4][0], 3.5, ABS_TOL); // main/x
+    EXPECT_NEAR(values[4][4], 7.0, ABS_TOL); // main/x
+    EXPECT_NEAR(values[1][0], sin(3.5), ABS_TOL); // main/sin1 (actual sine)
+    EXPECT_NEAR(values[1][4], sin(7.0), ABS_TOL); // main/sin1 (actual sine)
+    EXPECT_NEAR(values[2][0], sin(3.5), LOOSE_TOL); // main/sin2 (deriv approx)
+    EXPECT_NEAR(values[2][4], sin(7.0), VERY_LOOSE_TOL); // main/sin2 (deriv approx)
+    EXPECT_NEAR(values[3][0], sin(3.5), LOOSE_TOL); // main/sin3 (parabolic approx)
+    EXPECT_NEAR(values[3][4], sin(7.0), VERY_LOOSE_TOL); // main/sin3 (parabolic approx)
+    csim_freeMatrix((void**)values, length);
+}
+
