@@ -18,6 +18,9 @@ public:
     CellmlModelDefinition();
     ~CellmlModelDefinition();
     int loadModel(const std::string& url);
+    int loadModelFromString(const std::string& modelString);
+    int instantiateCellmlApiObjects();
+
     // TODO:
     //std::string getVariableIdByXpath(const std::string& xpath);
     /**
@@ -45,6 +48,30 @@ public:
     int setVariableAsOutput(const std::string& variableId);
 
     /**
+     * Get the type of the specified variable.
+     *
+     * The variable type is a bit field which may include several types depending on the variable. Bitwise and operator
+     * should be used with csim::VariableTypes to check for specific types. e.g., (variableType & csim::StateType).
+     *
+     * @param variableId The ID of the variable in the format 'component_name/variable_name'.
+     * @return The bitwise type definition for the specified variable. The type csim::UndefinedType will be returned
+     * on error.
+     */
+    unsigned char getVariableType(const std::string& variableId);
+
+    /**
+     * Get the index of the specified variable in its role as the specified type.
+     *
+     * Each variable may have multiple types. This will return the index of the given variable for its entry in the
+     * specified role (0-based index).
+     * @param variableId The ID of the variable in the format 'component_name/variable_name'.
+     * @param variableType The role of this variable for which you want the index.
+     * @return The index of the variable in the specified role. Will be <0 if an error occurs.
+     * @see csim::VariableTypes.
+     */
+    int getVariableIndex(const std::string& variableId, unsigned char variableType);
+
+    /**
      * Instantiate this model defintion into executable coode. Will cause code to be generated and compiled into
      * an executable function.
      * @param compiler The compiler to use for instantiating the model
@@ -60,6 +87,26 @@ public:
     {
         if (mModelLoaded) return mStateCounter;
         else return -1;
+    }
+
+    /**
+     * The number of variables currently flagged as inputs in this model. Will only be "complete" if a model has
+     * successfully been instantiated.
+     * @return The number of input variables in this model.
+     */
+    inline int numberOfInputVariables() const
+    {
+        return mNumberOfInputVariables;
+    }
+
+    /**
+     * The number of variables currently flagged as outputs in this model. Will only be "complete" if a model has
+     * successfully been instantiated.
+     * @return The number of output variables in this model.
+     */
+    inline int numberOfOutputVariables() const
+    {
+        return mNumberOfOutputVariables;
     }
 
 private:

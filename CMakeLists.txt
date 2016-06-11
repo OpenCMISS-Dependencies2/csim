@@ -12,11 +12,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.cmake_minimum_required (VERSION 3.1)
 
-
 cmake_minimum_required(VERSION 3.2)
+project(CSim VERSION 1.0 LANGUAGES CXX)
 
-set(PROJECT_NAME CSim_v2)
-project(${PROJECT_NAME} CXX)
+option(BUILD_TESTING "Build CSim tests" OFF)
 
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
 include(common)
@@ -42,15 +41,8 @@ if( MEMCHECK AND CMAKE_COMPILER_IS_GNUCXX )
   set( CSIM_MEMCHECK "${MEMCHECK}" CACHE BOOL ${_PARAM_ANNOTATION} FORCE )
 endif()
 
-# UNIT_TESTS ==> CSIM_UNIT_TESTS
-set(_PARAM_ANNOTATION "Enable build of automated CSim tests.")
-set( CSIM_UNIT_TESTS ON CACHE BOOL ${_PARAM_ANNOTATION} )
-if( UNIT_TESTS )
-  set( CSIM_UNIT_TESTS "${UNIT_TESTS}" CACHE BOOL ${_PARAM_ANNOTATION} FORCE )
-endif()
-
 if(CSIM_COVERAGE OR CSIM_MEMCHECK)
-  set(CSIM_UNIT_TESTS ON CACHE BOOL ${_PARAM_ANNOTATION} FORCE)
+  set(CSIM_UNIT_TESTS ON)
 endif()
 
 # TWAE ==> CSIM_WARNINGS_AS_ERRORS -- Note: This excludes third party code, where warnings are never treated as errors.
@@ -72,9 +64,9 @@ endif()
 
 # INSTALL_PREFIX ==> CSIM_INSTALL_PREFIX
 set(_PARAM_ANNOTATION "Install path prefix, prepended onto install directories.")
-set( CSIM_INSTALL_PREFIX ${CMAKE_INSTALL_PREFIX} CACHE STRING ${_PARAM_ANNOTATION} )
+set( CSIM_INSTALL_PREFIX ${CMAKE_INSTALL_PREFIX} CACHE PATH ${_PARAM_ANNOTATION} )
 if( INSTALL_PREFIX )
-  set( CSIM_INSTALL_PREFIX ${INSTALL_PREFIX} CACHE STRING ${_PARAM_ANNOTATION} FORCE )
+  set( CSIM_INSTALL_PREFIX ${INSTALL_PREFIX} CACHE PATH ${_PARAM_ANNOTATION} FORCE )
 endif()
 
 # BUILD_SHARED ==> CSIM_BUILD_SHARED
@@ -98,11 +90,13 @@ hide_distracting_variables()
 # cellml library target
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/src)
 
-if (CSIM_UNIT_TESTS)
+if (BUILD_TESTING)
   # enable testing here so that we can make use of the 'test' target
   enable_testing()
   add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/tests)
 endif()
+
+#add_subdirectory(examples/cvode-integrator)
 
 
 
