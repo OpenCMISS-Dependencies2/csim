@@ -38,6 +38,9 @@ CSIM_EXPORT int csim_simulate(
         double initialTime, double startTime, double endTime, int numSteps,
         double** *outMatrix, int* outRows, int *outCols);
 
+// get the current value of the variable of integration (VOI, usually time)
+CSIM_EXPORT double csim_getVariableOfIntegration();
+
 // simulate from the current value of the VoI to Voi + step.
 CSIM_EXPORT int csim_oneStep(double step);
 

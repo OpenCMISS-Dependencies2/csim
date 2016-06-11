@@ -402,3 +402,42 @@ TEST(SBW, simulate_import_delayed_start) {
     csim_freeMatrix((void**)values, length);
 }
 
+TEST(SBW, get_voi) {
+    char* modelString;
+    int length;
+    int code = csim_serialiseCellmlFromUrl(
+                TestResources::getLocation(
+                    TestResources::CELLML_SINE_IMPORTS_MODEL_RESOURCE),
+                &modelString, &length);
+    // no point continuing if this fails
+    ASSERT_EQ(code, 0);
+    code = csim_loadCellml(modelString);
+    ASSERT_EQ(code, 0);
+    csim_freeVector(modelString);
+    double voi = csim_getVariableOfIntegration();
+    EXPECT_NEAR(voi, 0.0, ABS_TOL);
+    int nData;
+    double** values;
+    code = csim_setTolerances(1.0, 1.0, 10);
+    code = csim_simulate(0.0, 3.5, 7.0, 4, &values, &length, &nData);
+    csim_freeMatrix((void**)values, nData);
+    voi = csim_getVariableOfIntegration();
+    EXPECT_NEAR(voi, 7.0, ABS_TOL);
+    code = csim_simulate(0.0, 3.5, 7.0, 4, &values, &length, &nData);
+    csim_freeMatrix((void**)values, nData);
+    voi = csim_getVariableOfIntegration();
+    EXPECT_NEAR(voi, 7.0, ABS_TOL);
+    code = csim_oneStep(1.0);
+    voi = csim_getVariableOfIntegration();
+    EXPECT_NEAR(voi, 8.0, ABS_TOL);
+    code = csim_oneStep(2.345);
+    voi = csim_getVariableOfIntegration();
+    EXPECT_NEAR(voi, 10.345, ABS_TOL);
+    code = csim_reset();
+    voi = csim_getVariableOfIntegration();
+    EXPECT_NEAR(voi, 0.0, ABS_TOL);
+    code = csim_oneStep(2.345);
+    voi = csim_getVariableOfIntegration();
+    EXPECT_NEAR(voi, 2.345, ABS_TOL);
+}
+

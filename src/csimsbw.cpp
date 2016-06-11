@@ -273,6 +273,11 @@ int csim_serialiseCellmlFromUrl(const char* url,
     return CSIM_SUCCESS;
 }
 
+double csim_getVariableOfIntegration()
+{
+    return _csim->voi;
+}
+
 //! Frees a vector previously allocated by this library.
 void csim_freeVector(void* vector)
 {
