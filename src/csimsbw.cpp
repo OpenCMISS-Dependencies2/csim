@@ -95,7 +95,7 @@ public:
             for (int i=0; i<n; ++i)
             {
                 states[i] += rates[i]*step;
-                std::cout << "time: " << voi << "; state[" << i << "] = " << states[i] << std::endl;
+                //std::cout << "time: " << voi << "; state[" << i << "] = " << states[i] << std::endl;
             }
         }
         return CSIM_SUCCESS;
@@ -209,6 +209,37 @@ int csim_simulate(
         double initialTime, double startTime, double endTime, int numSteps,
         double** *outMatrix, int* outRows, int *outCols)
 {
+    int length = _csim->outputVariables.size();
+    int nData = numSteps + 1;
+    double** data = (double**)malloc(sizeof(double*)*length);
+    for (int i=0; i<length; ++i) data[i] = (double*)malloc(sizeof(double)*nData);
+    // set the initial time
+    _csim->voi = initialTime;
+    // step to the start time
+    _csim->integrate(startTime);
+    // grab the values
+    int i = 0;
+    for (const auto& ov: _csim->outputVariables)
+    {
+        data[i++][0] = _csim->outputs[ov.second];
+        //std::cout << " " << data[i-1][0];
+    }
+    //std::cout << std::endl;
+    double dt = (endTime - startTime) / ((double)numSteps);
+    for (int n=1; n<=numSteps; ++n)
+    {
+        csim_oneStep(dt);
+        i = 0;
+        for (const auto& ov: _csim->outputVariables)
+        {
+            data[i++][n] = _csim->outputs[ov.second];
+            //std::cout << " " << data[i-1][n];
+        }
+        //std::cout << std::endl;
+    }
+    *outCols = nData;
+    *outRows = length;
+    *outMatrix = data;
     return CSIM_SUCCESS;
 }
 

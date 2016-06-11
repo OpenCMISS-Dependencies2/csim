@@ -32,6 +32,7 @@ CSIM_EXPORT int csim_getValues(double* *outArray, int *outLength);
 // Not implemented.
 CSIM_EXPORT int csim_steadyState();
 
+// simulate the model over the given interval and return all the  data
 CSIM_EXPORT int csim_simulate(
         double initialTime, double startTime, double endTime, int numSteps,
         double** *outMatrix, int* outRows, int *outCols);
