@@ -13,7 +13,19 @@
 # limitations under the License.cmake_minimum_required (VERSION 3.1)
 
 cmake_minimum_required(VERSION 3.2)
-project(CSim VERSION 1.0 LANGUAGES CXX)
+
+# Handle superbuild first
+option (USE_SUPERBUILD "Whether or not a superbuild should be invoked" ON)
+
+if (USE_SUPERBUILD)
+  project (SUPERBUILD NONE)
+  # execute the superbuild (this script will be invoked again without the
+  # USE_SUPERBUILD option this time)
+  include (cmake/SuperBuild.cmake)
+  return()                      # stop processing this file further
+else()
+  project(CSim VERSION 1.0 LANGUAGES CXX)
+endif()
 
 option(BUILD_TESTING "Build CSim tests" OFF)
 
