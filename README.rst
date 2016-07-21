@@ -2,7 +2,8 @@ This is a reboot of the CSim project which aims to better support the use of Cel
 Please consider this very much a **work in progress**.
 
 The initial aim is to separate the generation of an executable model from the actual numerical method being used to integrate
-the model, and borrows heavily from code written for OpenCMISS (https://github.com/opencmiss/cellml).
+the model, and borrows heavily from code written for OpenCMISS (https://github.com/opencmiss/cellml) - which is now being
+migrated to use CSim instead.
 
 CSim
 ====
