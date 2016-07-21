@@ -48,8 +48,8 @@ configure_file(
 )
 
 find_package(LibCellML ${LIBCELLML_VERSION} CONFIG REQUIRED)
-find_package(LibXml2 ${LIBXML2_VERSION} CONFIG REQUIRED)
 find_package(ZLIB ${ZLIB_VERSION} CONFIG REQUIRED)
+find_package(LibXml2 ${LIBXML2_VERSION} CONFIG REQUIRED)
 
 # Since LLVM 3.5 the cmake files are available in the releases, so consolidate on the "cmake" method now.
 find_package(LLVM ${LLVM_VERSION} CONFIG REQUIRED)
@@ -58,7 +58,7 @@ find_package(Clang ${CLANG_VERSION} CONFIG REQUIRED)
 #message(STATUS "Using LLVMConfig.cmake in: ${LLVM_DIR}")
 
 if( ${CMAKE_SYSTEM_NAME} STREQUAL "Linux" )
-  SET(PLATFORM_LIBS ${PLATFORM_LIBS} "dl" "pthread" "tinfo")
+  SET(PLATFORM_LIBS ${PLATFORM_LIBS} "dl" "pthread")
 elseif( ${CMAKE_SYSTEM_NAME} STREQUAL "Darwin" )
   SET(PLATFORM_LIBS ${PLATFORM_LIBS} "ncurses")
 endif()
