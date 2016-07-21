@@ -49,7 +49,7 @@ configure_file(
 
 find_package(LibCellML ${LIBCELLML_VERSION} CONFIG REQUIRED)
 find_package(LibXml2 ${LIBXML2_VERSION} CONFIG REQUIRED)
-find_package(ZLIB ${ZLIB_VERSION} REQUIRED)
+find_package(ZLIB ${ZLIB_VERSION} CONFIG REQUIRED)
 
 # Since LLVM 3.5 the cmake files are available in the releases, so consolidate on the "cmake" method now.
 find_package(LLVM ${LLVM_VERSION} CONFIG REQUIRED)
