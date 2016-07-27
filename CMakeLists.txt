@@ -16,6 +16,7 @@ cmake_minimum_required(VERSION 3.2)
 
 # Handle superbuild first
 option (USE_SUPERBUILD "Whether or not a superbuild should be invoked" ON)
+list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
 
 if (USE_SUPERBUILD)
   project (SUPERBUILD NONE)
