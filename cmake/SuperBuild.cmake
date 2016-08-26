@@ -1,5 +1,15 @@
 include (ExternalProject)
 
+if (NOT CMAKE_BUILD_TYPE)
+	set (CMAKE_BUILD_TYPE Release CACHE INTERNAL "Choose the type of build. Release, Debug etc." FORCE)
+endif ()
+
+# Very basic multi-configuration generator detection.
+if (CMAKE_GENERATOR MATCHES "Visual Studio .*")
+	message(STATUS "Multi-Configuration generator detected.")
+	set (MULTI_CONFIG_COMMAND_EXT --config ${CMAKE_BUILD_TYPE})
+endif ()
+
 set (DEPENDENCIES_PREFIX "${CMAKE_CURRENT_BINARY_DIR}/Dependencies")
 set (DEPENDENCIES_INSTALL_DIR "${CMAKE_CURRENT_BINARY_DIR}/local")
 set (DEPENDENCIES_CMAKE_ARGS
@@ -24,10 +34,9 @@ ExternalProject_Add (ep_zlib
 
   UPDATE_COMMAND ""
   PATCH_COMMAND ""
-  BUILD_COMMAND "ninja"
+  BUILD_COMMAND ${CMAKE_COMMAND} --build . ${MULTI_CONFIG_COMMAND_EXT}
   TEST_COMMAND ""
 
-  CMAKE_GENERATOR "Ninja"
   CMAKE_ARGS ${DEPENDENCIES_CMAKE_ARGS} -DBUILD_TESTS=OFF
   )
 
@@ -39,10 +48,9 @@ ExternalProject_Add (ep_libxml2
 
   UPDATE_COMMAND ""
   PATCH_COMMAND ""
-  BUILD_COMMAND "ninja"
+  BUILD_COMMAND ${CMAKE_COMMAND} --build . ${MULTI_CONFIG_COMMAND_EXT}
   TEST_COMMAND ""
 
-  CMAKE_GENERATOR "Ninja"
   CMAKE_ARGS ${DEPENDENCIES_CMAKE_ARGS} -DBUILD_TESTS=OFF
   )
 
@@ -55,10 +63,9 @@ ExternalProject_Add (ep_libcellml
 
   UPDATE_COMMAND ""
   PATCH_COMMAND ""
-  BUILD_COMMAND "ninja"
+  BUILD_COMMAND ${CMAKE_COMMAND} --build . ${MULTI_CONFIG_COMMAND_EXT}
   TEST_COMMAND ""
 
-  CMAKE_GENERATOR "Ninja"
   CMAKE_ARGS ${DEPENDENCIES_CMAKE_ARGS} -DBUILD_TESTING=OFF
     -DENABLE_ANNOTOOLS=ON
     -DENABLE_CCGS=ON
@@ -80,35 +87,33 @@ ExternalProject_Add (ep_libcellml
     -DENABLE_CGRS=OFF
   )
 
-#list (APPEND DEPENDENCIES ep_llvm)
-#ExternalProject_Add (ep_llvm
-#  DEPENDS ep_libxml2 ep_libcellml
-#  GIT_REPOSITORY https://github.com/OpenCMISS-Dependencies/llvm
-#  GIT_TAG devel
+list (APPEND DEPENDENCIES ep_llvm)
+ExternalProject_Add (ep_llvm
+  DEPENDS ep_libxml2 ep_libcellml
+  GIT_REPOSITORY https://github.com/OpenCMISS-Dependencies/llvm
+  GIT_TAG devel
 
-#  CMAKE_GENERATOR "Ninja"
-#  UPDATE_COMMAND ""
-#  PATCH_COMMAND ""
-#  BUILD_COMMAND "ninja"
-#  TEST_COMMAND ""
+  UPDATE_COMMAND ""
+  PATCH_COMMAND ""
+  BUILD_COMMAND ${CMAKE_COMMAND} --build . ${MULTI_CONFIG_COMMAND_EXT}
+  TEST_COMMAND ""
 
-#  CMAKE_ARGS ${DEPENDENCIES_CMAKE_ARGS}
-#  )
+  CMAKE_ARGS ${DEPENDENCIES_CMAKE_ARGS}
+  )
 
-#list (APPEND DEPENDENCIES ep_clang)
-#ExternalProject_Add (ep_clang
-#  DEPENDS ep_llvm ep_libxml2 ep_zlib
-#  GIT_REPOSITORY https://github.com/nickerso/opencmiss-clang
-#  GIT_TAG backport-3.8-libxml-patch
+list (APPEND DEPENDENCIES ep_clang)
+ExternalProject_Add (ep_clang
+  DEPENDS ep_llvm ep_libxml2 ep_zlib
+  GIT_REPOSITORY https://github.com/nickerso/opencmiss-clang
+  GIT_TAG backport-3.8-libxml-patch
 
-#  UPDATE_COMMAND ""
-#  PATCH_COMMAND ""
-#  BUILD_COMMAND "ninja"
-#  TEST_COMMAND ""
+  UPDATE_COMMAND ""
+  PATCH_COMMAND ""
+  BUILD_COMMAND ${CMAKE_COMMAND} --build . ${MULTI_CONFIG_COMMAND_EXT}
+  TEST_COMMAND ""
 
-#  CMAKE_GENERATOR "Ninja"
-#  CMAKE_ARGS ${DEPENDENCIES_CMAKE_ARGS}
-#  )
+  CMAKE_ARGS ${DEPENDENCIES_CMAKE_ARGS}
+  )
 
 ## shouldn't need this if we can find all the config files
 ##list (APPEND EXTRA_CMAKE_ARGS
