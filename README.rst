@@ -24,7 +24,7 @@ CSim uses a super build system to build all requirements and CSim itself.  This 
 
 For all systems first acquire the CSim source code::
 
-  git clone --recursive here
+  git clone --recursive https://github.com/nickerso/csim [here]
 
 then create a sibling directory to the source where all the building of CSim will take place::
 
