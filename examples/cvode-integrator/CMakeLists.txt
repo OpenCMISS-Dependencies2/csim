@@ -1,18 +1,14 @@
-cmake_minimum_required(VERSION 3.2)
-
-set(PROJECT_NAME csim-cvode-integrator)
-project(${PROJECT_NAME} VERSION 1.0.0 LANGUAGES CXX)
+project(csim-cvode-integrator VERSION 1.0.0 LANGUAGES CXX)
 
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
 
-find_package(csim CONFIG CONFIGS csim-targets.cmake)
-find_package(CVODE REQUIRED)
+find_package(Sundials ${SUNDIALS_VERSION} CONFIG REQUIRED)
 
 set(SOURCE_FILES
   ${CMAKE_CURRENT_SOURCE_DIR}/cvode-integrator.cpp
 )
 
-add_executable(${PROJECT_NAME}
+add_executable(csim-cvode-integrator 
     ${SOURCE_FILES}
 )
 
@@ -21,18 +17,13 @@ if (MSVC)
     set(PLATFORM_DEFINES "_USE_MATH_DEFINES")
 endif ()
 
-target_compile_definitions(${PROJECT_NAME}
+target_compile_definitions(csim-cvode-integrator
     PRIVATE
     ${PLATFORM_DEFINES}
 )
 
-target_include_directories(${PROJECT_NAME}
-    PUBLIC
-    ${CVODE_INCLUDE_DIR}
-)
-
-target_link_libraries(${PROJECT_NAME}
+target_link_libraries(csim-cvode-integrator
     PUBLIC
     csim
-    ${CVODE_LIBRARIES}
+    sundials_cvode
 )

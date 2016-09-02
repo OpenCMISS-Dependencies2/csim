@@ -8,5 +8,5 @@ build/
 .settings/
 
 # Qt Creator generated files
-CMakeLists.txt.user
+CMakeLists.txt.user*
 

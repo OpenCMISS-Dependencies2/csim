@@ -17,6 +17,7 @@ limitations under the License.Some license of other
 
 #include "csim/model.h"
 #include "csim/error_codes.h"
+#include "csim/variable_types.h"
 #include "cellml_model_definition.h"
 #include "compiler.h"
 #include "xmlutils.h"
@@ -32,7 +33,9 @@ Model::Model(const Model &src)
     mModelDefinition = src.mModelDefinition;
     mCompiler = src.mCompiler;
     mInstantiated = src.mInstantiated;
-    mNumberOfStates = 0;
+    mNumberOfStates = src.mNumberOfStates;
+    mNumberOfInputs = src.mNumberOfInputs;
+    mNumberOfOutputs = src.mNumberOfOutputs;
     // FIXME: need to copy the xmldoc?
 }
 
@@ -72,6 +75,27 @@ int Model::loadCellmlModel(const std::string &url)
     return CSIM_OK;
 }
 
+int Model::loadCellmlModelFromString(const std::string &ms)
+{
+    if (mModelDefinition) delete static_cast<CellmlModelDefinition*>(mModelDefinition);
+    std::cout << "Loading CellML Model from given string." << std::endl;
+    CellmlModelDefinition* cellml = new CellmlModelDefinition();
+    int success = cellml->loadModelFromString(ms);
+    if (success != 0)
+    {
+        std::cerr << "Model::loadCellmlModel: Unable to load the model string." << std::endl;
+        delete cellml;
+        mModelDefinition = NULL;
+        return UNABLE_TO_LOAD_MODEL_STRING;
+    }
+    mModelDefinition = static_cast<void*>(cellml);
+    mNumberOfStates = cellml->numberOfStateVariables();
+    if (mXmlDoc) delete mXmlDoc;
+    mXmlDoc = new XmlDoc();
+    mXmlDoc->parseDocumentString(ms);
+    return CSIM_OK;
+}
+
 int Model::setVariableAsInput(const std::string& variableId)
 {
     if (mInstantiated) return MODEL_ALREADY_INSTANTIATED;
@@ -92,6 +116,84 @@ int Model::setVariableAsOutput(const std::string& variableId)
     return outputIndex;
 }
 
+unsigned char Model::getVariableType(const std::string& variableId)
+{
+    if (! mModelDefinition) return VariableTypes::UndefinedType;
+    CellmlModelDefinition* cellml = static_cast<CellmlModelDefinition*>(mModelDefinition);
+    return cellml->getVariableType(variableId);
+}
+
+int Model::getVariableIndex(const std::string& variableId, unsigned char variableType)
+{
+    if (! mModelDefinition) return csim::MISSING_MODEL_DEFINTION;
+    CellmlModelDefinition* cellml = static_cast<CellmlModelDefinition*>(mModelDefinition);
+    return cellml->getVariableIndex(variableId, variableType);
+}
+
+std::map<std::string, int> Model::setAllVariablesAsInput()
+{
+    std::map<std::string, int> inputVariables;
+    if (mInstantiated)
+    {
+        std::cerr << "Model instantiated, need to set inputs before instantiating"
+                  << std::endl;
+        return inputVariables;
+    }
+    if (! mModelDefinition)
+    {
+        std::cerr << "Missing model definition can't set inputs."
+                  << std::endl;
+        return inputVariables;
+    }
+    // TODO: need to check that we are using a CellML model...
+    CellmlModelDefinition* cellml = static_cast<CellmlModelDefinition*>(mModelDefinition);
+    std::vector<std::string> allVariables = mXmlDoc->getVariableIds();
+    for (const auto& id: allVariables)
+    {
+        // several variables in a model can map to the same input variable.
+        int inputIndex = cellml->setVariableAsInput(id);
+        if (inputIndex >= 0)
+        {
+            std::cout << "Input index for " << id << ": " << inputIndex
+                      << std::endl;
+            inputVariables[id] = inputIndex;
+        }
+    }
+    return inputVariables;
+}
+
+std::map<std::string, int> Model::setAllVariablesAsOutput()
+{
+    std::map<std::string, int> outputVariables;
+    if (mInstantiated)
+    {
+        std::cerr << "Model instantiated, need to set outputs before instantiating"
+                  << std::endl;
+        return outputVariables;
+    }
+    if (! mModelDefinition)
+    {
+        std::cerr << "Missing model definition can't set outputs."
+                  << std::endl;
+        return outputVariables;
+    }
+    // TODO: need to check that we are using a CellML model...
+    CellmlModelDefinition* cellml = static_cast<CellmlModelDefinition*>(mModelDefinition);
+    std::vector<std::string> allVariables = mXmlDoc->getVariableIds();
+    for (const auto& id: allVariables)
+    {
+        // several variables can map to the same output variable
+        int outputIndex = cellml->setVariableAsOutput(id);
+        if (outputIndex >= 0)
+        {
+            std::cout << "Output index for " << id << ": " << outputIndex
+                      << std::endl;
+            outputVariables[id] = outputIndex;
+        }
+    }
+    return outputVariables;
+}
+
 int Model::instantiate(bool verbose, bool debug)
 {
     if (! mModelDefinition) return MISSING_MODEL_DEFINTION;
@@ -106,7 +208,12 @@ int Model::instantiate(bool verbose, bool debug)
     }
     else compiler = static_cast<Compiler*>(mCompiler);
     int code = cellml->instantiate(*compiler);
-    if (code == CSIM_OK) mInstantiated = true;
+    if (code == CSIM_OK)
+    {
+        mInstantiated = true;
+        mNumberOfInputs = cellml->numberOfInputVariables();
+        mNumberOfOutputs = cellml->numberOfOutputVariables();
+    }
     return code;
 }
 

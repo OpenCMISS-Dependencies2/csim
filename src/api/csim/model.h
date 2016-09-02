@@ -63,6 +63,13 @@ public:
      int loadCellmlModel(const std::string& url);
 
      /**
+      * Load the CellML model from the given string.
+      * @param modelString The string containing the CellML model.
+      * @return zero on success, non-zero if the model is not able to be loaded.
+      */
+      int loadCellmlModelFromString(const std::string& modelString);
+
+     /**
       * Flag the specified variable as being an input for the purposes of code generation. This implies
       * that the variable will have its value set externally to the CellML model. Variables flagged as inputs will be
       * used via the INPUT array in this model's executable function. Attempting to flag a variable after
@@ -85,6 +92,60 @@ public:
       * negative status code will be returned.
       */
      int setVariableAsOutput(const std::string& variableId);
+
+     /**
+      * Get the type of the specified variable.
+      *
+      * The single bitwise type returned should be used with the csim::VariableTypes to determine if the variable is of a
+      * specific type. e.g., (variableType & csim::StateType) would be true for state variables. A given variable
+      * can have multiple types.
+      *
+      * @param variableId The ID of the variable in the format 'component_name/variable_name'.
+      * @return The bitwise type field of the specified variable. csim::UndefinedType will be returned on error.
+      */
+     unsigned char getVariableType(const std::string& variableId);
+
+     /**
+      * Get the index of the specified variable in its role as the specified type.
+      *
+      * Each variable may have multiple types. This will return the index of the given variable for its entry in the
+      * specified role (0-based index).
+      * @param variableId The ID of the variable in the format 'component_name/variable_name'.
+      * @param variableType The role of this variable for which you want the index.
+      * @return The index of the variable in the specified role. Will be <0 if an error occurs.
+      * @see csim::VariableTypes.
+      */
+     int getVariableIndex(const std::string& variableId, unsigned char variableType);
+
+     /**
+      * Set all reachable and suitable variables in the model as inputs.
+      *
+      * An alternate usage of a CSim model is to flag all suitable variables in the
+      * model as input variables. This is useful when you simply want to use the model
+      * without knowing a priori the variables of interest. This method will look for
+      * all variables in the top-level model (i.e., reachable via SED-ML XPath
+      * expressions) and set them to inputs if suitable. The input variable IDs will
+      * be returned with their index into the input array.
+      *
+      * @return A map of the variable IDs for the reachable and suitable variables,
+      * and their index in the input array.
+      */
+     std::map<std::string, int> setAllVariablesAsInput();
+
+     /**
+      * Set all reachable and suitable variables in the model as outputs.
+      *
+      * An alternate usage of a CSim model is to flag all suitable variables in the
+      * model as output variables. This is useful when you simply want to use the model
+      * without knowing a priori the variables of interest. This method will look for
+      * all variables in the top-level model (i.e., reachable via SED-ML XPath
+      * expressions) and set them to outputs if suitable. The output variable IDs will
+      * be returned.
+      *
+      * @return A map of the variable IDs for the reachable and suitable variables,
+      * and their index in the output array.
+      */
+     std::map<std::string, int> setAllVariablesAsOutput();
 
      /**
       * Instantiate the current model into an executable function. This method should only be called once all
@@ -127,6 +188,26 @@ public:
          return mNumberOfStates;
      }
 
+     /**
+      * Will provide the number of variables in this model flagged as input. This is the minimum size of the input
+      * array. The returned number will only make sense after a model is successfully loaded.
+      * @return The number of input variables in this model.
+      */
+     inline int numberOfInputVariables() const
+     {
+         return mNumberOfInputs;
+     }
+
+     /**
+      * Will provide the number of variables in this model flagged as output. This is the minimum size of the output
+      * array. The returned number will only make sense after a model is successfully loaded.
+      * @return The number of output variables in this model.
+      */
+     inline int numberOfOutputVariables() const
+     {
+         return mNumberOfOutputs;
+     }
+
      std::string mapXpathToVariableId(const std::string& xpath,
                                       const std::map<std::string, std::string>& namespaces) const;
 
@@ -137,7 +218,7 @@ private:
     void* mModelDefinition;
     void* mCompiler;
     bool mInstantiated;
-    int mNumberOfStates;
+    int mNumberOfStates, mNumberOfInputs, mNumberOfOutputs;
     XmlDoc* mXmlDoc;
 };
 

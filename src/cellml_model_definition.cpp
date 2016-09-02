@@ -23,6 +23,7 @@
 #include <cellml-api-cxx-support.hpp>
 
 #include "csim/error_codes.h"
+#include "csim/variable_types.h"
 
 /*
  * Prototype local methods
@@ -50,20 +51,6 @@ static std::string getVariableUniqueId(iface::cellml_api::CellMLVariable* variab
     std::string id = variable->objid();
     return id;
 }
-
-/**
- * In order to be flexible in allowing a single variable to be multiple types (state
- * and output; input and output; etc.) we use these bit flags.
- * http://www.cplusplus.com/forum/general/1590/
- */
-enum VariableTypes {
-    UndefinedType    = 0x01,
-    StateType        = 0x02,
-    InputType        = 0x04,
-    OutputType       = 0x08,
-    IndependentType  = 0x10
-  //OpDaylight      = 0x20
-};
 
 class CellmlApiObjects
 {
@@ -100,6 +87,7 @@ int CellmlModelDefinition::loadModel(const std::string &url)
     std::wstring urlW = s2ws(url);
     ObjRef<iface::cellml_api::CellMLBootstrap> cb = CreateCellMLBootstrap();
     ObjRef<iface::cellml_api::DOMModelLoader> ml = cb->modelLoader();
+    int code;
     try
     {
         ObjRef<iface::cellml_api::Model> model = ml->loadFromURL(urlW);
@@ -107,6 +95,46 @@ int CellmlModelDefinition::loadModel(const std::string &url)
         // we have a model, so we can start grabbing hold of the CellML API objects
         mCapi = new CellmlApiObjects();
         mCapi->model = model;
+        code = instantiateCellmlApiObjects();
+    }
+    catch (...)
+    {
+      std::wcerr << L"Error loading model: " << urlW << std::endl;
+      return -1;
+    }
+    return code;
+}
+
+int CellmlModelDefinition::loadModelFromString(const std::string &ms)
+{
+    std::cout << "Creating CellML Model Definition from the given model string"
+              << std::endl;
+    mUrl = "";
+    std::wstring msW = s2ws(ms);
+    ObjRef<iface::cellml_api::CellMLBootstrap> cb = CreateCellMLBootstrap();
+    ObjRef<iface::cellml_api::DOMModelLoader> ml = cb->modelLoader();
+    int code;
+    try
+    {
+        ObjRef<iface::cellml_api::Model> model = ml->createFromText(msW);
+        model->fullyInstantiateImports();
+        // we have a model, so we can start grabbing hold of the CellML API objects
+        mCapi = new CellmlApiObjects();
+        mCapi->model = model;
+        code = instantiateCellmlApiObjects();
+    }
+    catch (...)
+    {
+      std::wcerr << L"Error loading model from string." << std::endl;
+      return -1;
+    }
+    return code;
+}
+
+int CellmlModelDefinition::instantiateCellmlApiObjects()
+{
+    try
+    {
         // create an annotation set to manage our variable usages
         ObjRef<iface::cellml_services::AnnotationToolService> ats = CreateAnnotationToolService();
         ObjRef<iface::cellml_services::AnnotationSet> as = ats->createAnnotationSet();
@@ -114,7 +142,7 @@ int CellmlModelDefinition::loadModel(const std::string &url)
         // mapping the connections between variables is a very expensive operation, so we want to
         // only do it once and keep hold of the mapping (tracker item 3294)
         ObjRef<iface::cellml_services::CeVASBootstrap> cvbs = CreateCeVASBootstrap();
-        ObjRef<iface::cellml_services::CeVAS> cevas = cvbs->createCeVASForModel(model);
+        ObjRef<iface::cellml_services::CeVAS> cevas = cvbs->createCeVASForModel(mCapi->model);
         std::wstring msg = cevas->modelError();
         if (msg != L"")
         {
@@ -129,7 +157,7 @@ int CellmlModelDefinition::loadModel(const std::string &url)
         try
         {
             cg->useCeVAS(cevas);
-            ObjRef<iface::cellml_services::CodeInformation> cci = cg->generateCode(model);
+            ObjRef<iface::cellml_services::CodeInformation> cci = cg->generateCode(mCapi->model);
             msg = cci->errorMessage();
             if (msg != L"")
             {
@@ -145,7 +173,7 @@ int CellmlModelDefinition::loadModel(const std::string &url)
                 return -5;
             }
             mCapi->codeInformation = cci;
-            // flag all state variables and the variable of integration
+            // always flag all state variables and the variable of integration
             ObjRef<iface::cellml_services::ComputationTargetIterator> cti = cci->iterateTargets();
             while (true)
             {
@@ -155,19 +183,19 @@ int CellmlModelDefinition::loadModel(const std::string &url)
                 ObjRef<iface::cellml_api::CellMLVariable> v(ct->variable());
                 if (ct->type() == iface::cellml_services::STATE_VARIABLE)
                 {
-                    mVariableTypes[getVariableUniqueId(v)] = StateType;
-                    mVariableIndices[getVariableUniqueId(v)][StateType] = mStateCounter;
+                    mVariableTypes[getVariableUniqueId(v)] = csim::StateType;
+                    mVariableIndices[getVariableUniqueId(v)][csim::StateType] = mStateCounter;
                     mStateCounter++;
                 }
                 else if (ct->type() == iface::cellml_services::VARIABLE_OF_INTEGRATION)
                 {
-                    mVariableTypes[getVariableUniqueId(v)] = IndependentType;
+                    mVariableTypes[getVariableUniqueId(v)] = csim::IndependentType;
                     mNumberOfIndependentVariables++;
                 }
                 else
                 {
                     // need to initialise the variable type
-                    mVariableTypes[getVariableUniqueId(v)] = UndefinedType;
+                    mVariableTypes[getVariableUniqueId(v)] = csim::UndefinedType;
                 }
             }
         }
@@ -181,7 +209,7 @@ int CellmlModelDefinition::loadModel(const std::string &url)
     }
     catch (...)
     {
-      std::wcerr << L"Error loading model: " << urlW << std::endl;
+      std::wcerr << L"Error instantiating CellML API objects." << std::endl;
       return -1;
     }
     return csim::CSIM_OK;
@@ -196,7 +224,7 @@ int CellmlModelDefinition::setVariableAsInput(const std::string &variableId)
     vets.push_back(iface::cellml_services::CONSTANT);
     //vets.push_back(iface::cellml_services::VARIABLE_OF_INTEGRATION);
     //vets.push_back(iface::cellml_services::FLOATING);
-    int index = flagVariable(variableId, InputType, vets,
+    int index = flagVariable(variableId, csim::InputType, vets,
                              mNumberOfInputVariables, mCapi,
                              mVariableTypes, mVariableIndices);
     return index;
@@ -216,10 +244,53 @@ int CellmlModelDefinition::setVariableAsOutput(const std::string &variableId)
     // differential equations then all algebraic variables will be constant - i.e., constitutive laws
     vets.push_back(iface::cellml_services::CONSTANT);
     vets.push_back(iface::cellml_services::VARIABLE_OF_INTEGRATION);
-    int index = flagVariable(variableId, OutputType, vets,
+    int index = flagVariable(variableId, csim::OutputType, vets,
                              mNumberOfOutputVariables, mCapi, mVariableTypes,
                              mVariableIndices);
     return index;
+}
+
+unsigned char CellmlModelDefinition::getVariableType(const std::string& variableId)
+{
+    if (! mCapi->codeInformation)
+    {
+        std::cerr << "CellML Model Definition::getVariableType: missing model implementation?" << std::endl;
+        return csim::UndefinedType;
+    }
+    ObjRef<iface::cellml_api::CellMLVariable> sv = findLocalVariable(mCapi, variableId);
+    if (!sv)
+    {
+        std::cerr << "CellML Model Definition::getVariableType: unable to find source variable for: "
+                  << variableId << std::endl;
+        return csim::UndefinedType;
+    }
+    std::map<std::string, unsigned char>::iterator variableTypeIt =
+            mVariableTypes.find(getVariableUniqueId(sv));
+    unsigned char currentTypes = csim::UndefinedType;
+    if (variableTypeIt != mVariableTypes.end())
+    {
+        currentTypes = variableTypeIt->second;
+    }
+    return currentTypes;
+}
+
+int CellmlModelDefinition::getVariableIndex(const std::string& variableId, unsigned char variableType)
+{
+    unsigned char vt = getVariableType(variableId);
+    if (vt == csim::UndefinedType)
+    {
+        std::cerr << "CellML Model Definition::getVariableIndex: unable to get the variable type for: "
+                  << variableId << std::endl;
+        return csim::UNDEFINED_VARIABLE_TYPE;
+    }
+    // can now assume everything set up for use
+    if (vt & variableType)
+    {
+        ObjRef<iface::cellml_api::CellMLVariable> sv = findLocalVariable(mCapi, variableId);
+        return mVariableIndices[getVariableUniqueId(sv)][variableType];
+    }
+    std::cerr << "CellML Model Definition::getVariableIndex: no computation target of matching type." << std::endl;
+    return csim::MISMATCHED_COMPUTATION_TARGET;
 }
 
 int CellmlModelDefinition::instantiate(Compiler& compiler)
@@ -465,29 +536,29 @@ std::string generateCodeForModel(CellmlApiObjects* capi,
                 // here we assign an array and index based on the "primary" purpose of the variable. Later
                 // we will add in secondary purposes.
                 unsigned char vType = typeit->second;
-                if (vType & StateType)
+                if (vType & csim::StateType)
                 {
-                    ename << L"CSIM_STATE[" << variableIndices[currentId][StateType] << L"]";
+                    ename << L"CSIM_STATE[" << variableIndices[currentId][csim::StateType] << L"]";
                 }
-                else if (vType & IndependentType)
+                else if (vType & csim::IndependentType)
                 {
                     // do nothing, but stop input and output annotations
                 }
-                else if (vType & InputType)
+                else if (vType & csim::InputType)
                 {
-                    ename << L"CSIM_INPUT[" << variableIndices[currentId][InputType] << L"]";
+                    ename << L"CSIM_INPUT[" << variableIndices[currentId][csim::InputType] << L"]";
                 }
-                else if (vType & OutputType)
+                else if (vType & csim::OutputType)
                 {
-                    ename << L"CSIM_OUTPUT[" << variableIndices[currentId][OutputType] << L"]";
+                    ename << L"CSIM_OUTPUT[" << variableIndices[currentId][csim::OutputType] << L"]";
                 }
                 capi->annotations->setStringAnnotation(sv, L"expression", ename.str());
 
-                if (vType & StateType)
+                if (vType & csim::StateType)
                 {
                     ename.str(L"");
                     ename.clear();
-                    ename << L"CSIM_RATE[" << variableIndices[currentId][StateType] << L"]";
+                    ename << L"CSIM_RATE[" << variableIndices[currentId][csim::StateType] << L"]";
                     capi->annotations->setStringAnnotation(sv, L"expression_d1", ename.str());
                 }
             }
@@ -519,41 +590,41 @@ std::string generateCodeForModel(CellmlApiObjects* capi,
         }
         std::cout << "Model is correctly constrained" << std::endl;
         // create the code in the format we know how to handle
-        code << "#include <math.h>\n"
+        code << "//#include <math.h>\n"
         /* required functions */
-             << "extern double fabs(double x);\n"
-             << "extern double acos(double x);\n"
-             << "extern double acosh(double x);\n"
-             << "extern double atan(double x);\n"
-             << "extern double atanh(double x);\n"
-             << "extern double asin(double x);\n"
-             << "extern double asinh(double x);\n"
-             << "extern double acos(double x);\n"
-             << "extern double acosh(double x);\n"
-             << "extern double asin(double x);\n"
-             << "extern double asinh(double x);\n"
-             << "extern double atan(double x);\n"
-             << "extern double atanh(double x);\n"
-             << "extern double ceil(double x);\n"
-             << "extern double cos(double x);\n"
-             << "extern double cosh(double x);\n"
-             << "extern double tan(double x);\n"
-             << "extern double tanh(double x);\n"
-             << "extern double sin(double x);\n"
-             << "extern double sinh(double x);\n"
-             << "extern double exp(double x);\n"
-             << "extern double floor(double x);\n"
-             << "extern double pow(double x, double y);\n"
-             << "extern double factorial(double x);\n"
-             << "extern double log(double x);\n"
-             << "extern double arbitrary_log(double x, double base);\n"
-             << "extern double gcd_pair(double a, double b);\n"
-             << "extern double lcm_pair(double a, double b);\n"
-             << "extern double gcd_multi(unsigned int size, ...);\n"
-             << "extern double lcm_multi(unsigned int size, ...);\n"
-             << "extern double multi_min(unsigned int size, ...);\n"
-             << "extern double multi_max(unsigned int size, ...);\n"
-             << "extern void NR_MINIMISE(double(*func)"
+             << "double fabs(double x);\n"
+             << "double acos(double x);\n"
+             << "double acosh(double x);\n"
+             << "double atan(double x);\n"
+             << "double atanh(double x);\n"
+             << "double asin(double x);\n"
+             << "double asinh(double x);\n"
+             << "double acos(double x);\n"
+             << "double acosh(double x);\n"
+             << "double asin(double x);\n"
+             << "double asinh(double x);\n"
+             << "double atan(double x);\n"
+             << "double atanh(double x);\n"
+             << "double ceil(double x);\n"
+             << "double cos(double x);\n"
+             << "double cosh(double x);\n"
+             << "double tan(double x);\n"
+             << "double tanh(double x);\n"
+             << "double sin(double x);\n"
+             << "double sinh(double x);\n"
+             << "double exp(double x);\n"
+             << "double floor(double x);\n"
+             << "double pow(double x, double y);\n"
+             << "double factorial(double x);\n"
+             << "double log(double x);\n"
+             << "double arbitrary_log(double x, double base);\n"
+             << "double gcd_pair(double a, double b);\n"
+             << "double lcm_pair(double a, double b);\n"
+             << "double gcd_multi(unsigned int size, ...);\n"
+             << "double lcm_multi(unsigned int size, ...);\n"
+             << "double multi_min(unsigned int size, ...);\n"
+             << "double multi_max(unsigned int size, ...);\n"
+             << "void NR_MINIMISE(double(*func)"
                 "(double VOI, double *C, double *R, double *S, double *A),"
                 "double VOI, double *C, double *R, double *S, double *A, "
                 "double *V);\n";
@@ -599,18 +670,18 @@ std::string generateCodeForModel(CellmlApiObjects* capi,
             if (typeit != variableTypes.end())
             {
                 unsigned char vType = typeit->second;
-                if (vType & OutputType)
+                if (vType & csim::OutputType)
                 {
-                    if (vType & StateType)
-                        code << "CSIM_OUTPUT[" << variableIndices[currentId][OutputType]
-                                << "] = CSIM_STATE[" << variableIndices[currentId][StateType]
+                    if (vType & csim::StateType)
+                        code << "CSIM_OUTPUT[" << variableIndices[currentId][csim::OutputType]
+                                << "] = CSIM_STATE[" << variableIndices[currentId][csim::StateType]
                                    << "];\n";
-                    else if (vType & InputType)
-                        code << "CSIM_OUTPUT[" << variableIndices[currentId][OutputType]
-                                << "] = CSIM_INPUT[" << variableIndices[currentId][InputType]
+                    else if (vType & csim::InputType)
+                        code << "CSIM_OUTPUT[" << variableIndices[currentId][csim::OutputType]
+                                << "] = CSIM_INPUT[" << variableIndices[currentId][csim::InputType]
                                    << "];\n";
-                    else if (vType & IndependentType)
-                        code << "CSIM_OUTPUT[" << variableIndices[currentId][OutputType]
+                    else if (vType & csim::IndependentType)
+                        code << "CSIM_OUTPUT[" << variableIndices[currentId][csim::OutputType]
                                 << "] = VOI;\n";
                 }
             }
