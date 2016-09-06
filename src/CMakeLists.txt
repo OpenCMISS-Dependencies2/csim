@@ -116,9 +116,9 @@ target_link_libraries(csim PUBLIC
   LLVMExecutionEngine
   LLVMMCJIT
   clangCodeGen
-  PRIVATE
   xml2
   ${ZLIB_LIBRARIES}
+  PRIVATE
   ${PLATFORM_LIBS}
 )
 
