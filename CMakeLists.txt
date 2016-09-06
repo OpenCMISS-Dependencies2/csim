@@ -14,19 +14,7 @@
 
 cmake_minimum_required(VERSION 3.2)
 
-# Handle superbuild first
-option (USE_SUPERBUILD "Whether or not a superbuild should be invoked" ON)
-list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
-
-if (USE_SUPERBUILD)
-  project (SUPERBUILD NONE)
-  # execute the superbuild (this script will be invoked again without the
-  # USE_SUPERBUILD option this time)
-  include (cmake/SuperBuild.cmake)
-  return()                      # stop processing this file further
-else()
-  project(CSim VERSION 1.0 LANGUAGES CXX)
-endif()
+project(CSim VERSION 1.0 LANGUAGES CXX)
 
 option(BUILD_TESTING "Build CSim tests" OFF)
 
