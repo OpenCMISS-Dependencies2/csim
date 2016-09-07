@@ -13,6 +13,8 @@ A library to help application developers execute CellML models. See http://get.r
 Building from Source
 ====================
 
+** OUT OF DATE, SEE https://github.com/nickerso/get-configured **
+
 The following is a list of requirements required for building on all platforms
 
  #. Toolchain (Visual Studio, GNU/GCC, Clang)
