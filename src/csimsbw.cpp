@@ -148,12 +148,18 @@ int csim_loadCellml(const char* modelString)
 
 int csim_reset()
 {
+	if (_csim == NULL)
+		return CSIM_SUCCESS;
+	
     _csim->popCache();
     return CSIM_SUCCESS;
 }
 
 int csim_setValue(const char* variableId, double value)
 {
+	if (_csim == NULL)
+		return CSIM_SUCCESS;
+	
     if (_csim->inputVariables.count(variableId) == 0)
     {
         return CSIM_FAILED;
@@ -165,6 +171,9 @@ int csim_setValue(const char* variableId, double value)
 
 int csim_getVariables(char** *outArray, int *outLength)
 {
+	if (_csim == NULL)
+		return CSIM_SUCCESS;
+	
     // can't use number of outputs directly as variables can be repeated.
     //int length = _csim->model->numberOfOutputVariables();
     int length = _csim->outputVariables.size();
@@ -185,6 +194,12 @@ int csim_getVariables(char** *outArray, int *outLength)
 
 double* _getValues(int* length)
 {
+	if (_csim == NULL)
+	{
+		*length = 0;
+		return NULL;
+	}
+	
     *length = _csim->outputVariables.size();
     double* values = (double*)malloc(sizeof(double)*(*length));
     int i = 0;
@@ -197,6 +212,13 @@ double* _getValues(int* length)
 
 int csim_getValues(double* *outArray, int *outLength)
 {
+	if (_csim == NULL)
+	{
+		*outLength = 0;
+		*outArray = NULL;
+		return CSIM_SUCCESS;
+	}
+	
     // make sure we are up-to-date
     _csim->modelFunction(_csim->voi, _csim->states, _csim->rates, _csim->outputs,
                          _csim->inputs);
@@ -213,6 +235,9 @@ int csim_simulate(
         double initialTime, double startTime, double endTime, int numSteps,
         double** *outMatrix, int* outRows, int *outCols)
 {
+	if (_csim == NULL)
+		return CSIM_SUCCESS;
+	
     int length = _csim->outputVariables.size();
     int nData = numSteps + 1;
     double** data = (double**)malloc(sizeof(double*)*nData);
@@ -238,6 +263,9 @@ int csim_simulate(
 
 int csim_oneStep(double step)
 {
+	if (_csim == NULL)
+		return CSIM_SUCCESS;
+	
     double final = _csim->voi + step;
     _csim->integrate(final);
     return CSIM_SUCCESS;
@@ -245,6 +273,9 @@ int csim_oneStep(double step)
 
 int csim_setTolerances(double aTol, double rTol, int maxSteps)
 {
+	if (_csim == NULL)
+		return CSIM_SUCCESS;
+	
     _csim->maxSteps = maxSteps;
     return CSIM_SUCCESS;
 }
@@ -275,6 +306,9 @@ int csim_serialiseCellmlFromUrl(const char* url,
 
 double csim_getVariableOfIntegration()
 {
+	if (_csim == NULL)
+		return 0;
+	
     return _csim->voi;
 }
 

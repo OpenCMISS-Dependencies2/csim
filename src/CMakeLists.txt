@@ -89,7 +89,7 @@ set(HEADER_FILES
 include(GenerateExportHeader)
 add_compiler_export_flags()
 
-add_library(csim
+add_library(csim SHARED
   ${SOURCE_FILES}
   ${HEADER_FILES}
   ${API_HEADER_FILES}
