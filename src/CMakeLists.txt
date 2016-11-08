@@ -170,14 +170,14 @@ file(WRITE ${CMAKE_CURRENT_BINARY_DIR}/csim-config-dependencies.cmake
     "set(_IMPORT_PREFIX \${${PROJECT_NAME}_IMPORT_PREFIX})"
 )
 
-install(EXPORT csim-config DESTINATION cmake)
+install(EXPORT csim-config DESTINATION ${PACKAGE_CONFIG_DIR})
 include(CMakePackageConfigHelpers)
 WRITE_BASIC_PACKAGE_VERSION_FILE(${CMAKE_CURRENT_BINARY_DIR}/csim-config-version.cmake
     COMPATIBILITY AnyNewerVersion)
 install(FILES
     ${CMAKE_CURRENT_BINARY_DIR}/csim-config-version.cmake
     ${CMAKE_CURRENT_BINARY_DIR}/csim-config-dependencies.cmake
-    DESTINATION cmake
+    DESTINATION ${PACKAGE_CONFIG_DIR}
 )
 
 set(CPACK_PACKAGE_VERSION_MAJOR "${CSIM_VERSION_MAJOR}")
