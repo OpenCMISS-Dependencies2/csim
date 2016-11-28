@@ -24,6 +24,7 @@
 
 #include "csim/error_codes.h"
 #include "csim/variable_types.h"
+#include "xmlutils.h"
 
 /*
  * Prototype local methods

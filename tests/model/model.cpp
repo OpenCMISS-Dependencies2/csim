@@ -17,6 +17,13 @@ TEST(Model, load_nonexisting_model) {
               model.loadCellmlModel("http://example.com/this.cellml.file.should.never.exist.xml"));
 }
 
+// since https is always messing up the CellML API better test it works.
+TEST(Model, load_remote_model) {
+    csim::Model model;
+    EXPECT_EQ(csim::CSIM_OK,
+              model.loadCellmlModel("https://models.physiomeproject.org/w/andre/sine/rawfile/46ffb5e4c20e6b4243be2c5b71f5c89744092645/sin_approximations_import.xml"));
+}
+
 TEST(Model, load_non_cellml_model) {
     csim::Model model;
     EXPECT_EQ(csim::UNABLE_TO_LOAD_MODEL_URL,

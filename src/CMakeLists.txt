@@ -57,6 +57,9 @@ find_package(Clang ${CLANG_VERSION} CONFIG REQUIRED)
 #message(STATUS "Found LLVM ${LLVM_PACKAGE_VERSION}")
 #message(STATUS "Using LLVMConfig.cmake in: ${LLVM_DIR}")
 
+# TODO: should this be part of get-configured?
+find_package(CURL REQUIRED)
+
 if( ${CMAKE_SYSTEM_NAME} STREQUAL "Linux" )
   SET(PLATFORM_LIBS ${PLATFORM_LIBS} "dl" "pthread")
 elseif( ${CMAKE_SYSTEM_NAME} STREQUAL "Darwin" )
@@ -108,6 +111,7 @@ target_include_directories(csim
   PRIVATE
   ${CMAKE_CURRENT_BINARY_DIR}
   ${LLVM_INCLUDE_DIRS}
+  ${CURL_INCLUDE_DIRS}
 )
 
 target_link_libraries(csim PUBLIC
@@ -118,6 +122,7 @@ target_link_libraries(csim PUBLIC
   clangCodeGen
   xml2
   ${ZLIB_LIBRARIES}
+  ${CURL_LIBRARIES}
   PRIVATE
   ${PLATFORM_LIBS}
 )

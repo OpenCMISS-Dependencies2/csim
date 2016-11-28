@@ -291,13 +291,17 @@ int csim_serialiseCellmlFromUrl(const char* url,
                                 char* *outString, int *outLength)
 {
     XmlDoc xml;
-    int code = xml.parseDocument(url);
+    // resolve URL if needed?
+    std::string u = xml.buildAbsoluteUri(url, "");
+    int code = xml.parseDocument(u);
+    *outString = NULL;
+    *outLength = 0;
     if (code != 0)
     {
         std::cerr << "Error parsing document at the URL: " << url << std::endl;
         return CSIM_FAILED;
     }
-    xml.setXmlBase(url);
+    xml.setXmlBase(u);
     std::string model = xml.dumpString();
     *outLength = model.length();
     *outString = strdup(model.c_str());
