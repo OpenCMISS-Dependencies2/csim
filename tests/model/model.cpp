@@ -13,7 +13,7 @@ TEST(Model, new_model) {
 
 TEST(Model, load_nonexisting_model) {
     csim::Model model;
-    EXPECT_EQ(csim::UNABLE_TO_LOAD_MODEL_URL,
+    EXPECT_EQ(csim::UNABLE_TO_LOAD_MODEL_STRING,
               model.loadCellmlModel("http://example.com/this.cellml.file.should.never.exist.xml"));
 }
 
@@ -26,13 +26,13 @@ TEST(Model, load_remote_model) {
 
 TEST(Model, load_non_cellml_model) {
     csim::Model model;
-    EXPECT_EQ(csim::UNABLE_TO_LOAD_MODEL_URL,
+    EXPECT_EQ(csim::UNABLE_TO_LOAD_MODEL_STRING,
               model.loadCellmlModel(TestResources::getLocation(TestResources::SBML_MODEL_RESOURCE)));
 }
 
 TEST(Model, load_invalid_cellml_model) {
     csim::Model model;
-    EXPECT_EQ(csim::UNABLE_TO_LOAD_MODEL_URL,
+    EXPECT_EQ(csim::UNABLE_TO_LOAD_MODEL_STRING,
               model.loadCellmlModel(TestResources::getLocation(TestResources::CELLML_INVALID_MODEL_RESOURCE)));
 }
 
@@ -50,14 +50,14 @@ TEST(Model, load_valid_cellml_model_with_imports) {
 
 TEST(Model, map_xpath_to_variable_id) {
     csim::Model model;
-    EXPECT_EQ(csim::CSIM_OK,
+    ASSERT_EQ(csim::CSIM_OK,
               model.loadCellmlModel(TestResources::getLocation(TestResources::CELLML_SINE_IMPORTS_MODEL_RESOURCE)));
     std::map<std::string, std::string> ns;
     ns["cellml"] = "http://www.cellml.org/cellml/1.1#";
     EXPECT_EQ("main/sin1", model.mapXpathToVariableId(
                   "/cellml:model/cellml:component[@name='main']/cellml:variable[@name='sin1']",
                   ns));
-    EXPECT_EQ(csim::CSIM_OK,
+    ASSERT_EQ(csim::CSIM_OK,
               model.loadCellmlModel(TestResources::getLocation(TestResources::CELLML_SINE_MODEL_RESOURCE)));
     ns["cellml"] = "http://www.cellml.org/cellml/1.0#";
     EXPECT_EQ("actual_sin/x", model.mapXpathToVariableId(

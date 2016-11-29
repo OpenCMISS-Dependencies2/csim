@@ -24,6 +24,7 @@
 
 #include "csim/error_codes.h"
 #include "csim/variable_types.h"
+#include "csim/model.h"
 #include "xmlutils.h"
 
 /*
@@ -79,6 +80,7 @@ CellmlModelDefinition::~CellmlModelDefinition()
     }
 }
 
+#if 0
 int CellmlModelDefinition::loadModel(const std::string &url)
 {
     std::cout << "Creating CellML Model Definition from the URL: "
@@ -105,6 +107,44 @@ int CellmlModelDefinition::loadModel(const std::string &url)
     }
     return code;
 }
+#endif
+
+/**
+ * @brief Hierarchically instantiate all imported models in the current model.
+ * @param currentModel The current model in which to look for imports
+ *
+ * Adapting the code from CDA_Model::fullyInstantiateImports() to make use of our
+ * own URL loading.
+ */
+static void resolveImports(ObjRef<iface::cellml_api::Model> currentModel)
+{
+    ObjRef<iface::cellml_api::URI> baseUri = currentModel->base_uri();
+    std::wstring xbs = baseUri->asText();
+    std::string currentBase = "";
+    if (!xbs.empty()) currentBase = ws2s(xbs);
+    // Go through the list of imports and add them to the queue...
+    ObjRef<iface::cellml_api::CellMLImportSet> imps = currentModel->imports();
+    ObjRef<iface::cellml_api::CellMLImportIterator> impi = imps->iterateImports();
+    while (true)
+    {
+        ObjRef<iface::cellml_api::CellMLImport> imp = impi->nextImport();
+        if (imp == NULL)
+            break;
+        if (!imp->wasInstantiated())
+        {
+            ObjRef<iface::cellml_api::URI> href = imp->xlinkHref();
+            std::string hrefS = ws2s(href->asText());
+            std::string hrefC =
+                    csim::Model::serialiseUrlToString(hrefS, currentBase);
+            imp->instantiateFromText(s2ws(hrefC));
+        }
+        // resolve child imports
+        ObjRef<iface::cellml_api::Model> importedModel = imp->importedModel();
+        if (!importedModel)
+            throw std::exception();
+        resolveImports(importedModel);
+    }
+}
 
 int CellmlModelDefinition::loadModelFromString(const std::string &ms)
 {
@@ -118,11 +158,26 @@ int CellmlModelDefinition::loadModelFromString(const std::string &ms)
     try
     {
         ObjRef<iface::cellml_api::Model> model = ml->createFromText(msW);
-        model->fullyInstantiateImports();
+        // resolve imports ourselves, to avoid issues with HTTPS and the
+        // model repository
+        try
+        {
+            resolveImports(model);
+        }
+        catch (...)
+        {
+            std::cerr << "Error resolving imports for the given model string."
+                      << std::endl;
+            return -2;
+        }
         // we have a model, so we can start grabbing hold of the CellML API objects
         mCapi = new CellmlApiObjects();
         mCapi->model = model;
         code = instantiateCellmlApiObjects();
+        // define the current model's URL using th xml:base if present
+        ObjRef<iface::cellml_api::URI> xmlBase = model->base_uri();
+        std::wstring xbs = xmlBase->asText();
+        if (!xbs.empty()) mUrl = ws2s(xbs);
     }
     catch (...)
     {

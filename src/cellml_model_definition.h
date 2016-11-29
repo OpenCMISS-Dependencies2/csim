@@ -17,7 +17,10 @@ class CellmlModelDefinition
 public:
     CellmlModelDefinition();
     ~CellmlModelDefinition();
+#if 0
+    // this should not be used now.
     int loadModel(const std::string& url);
+#endif
     int loadModelFromString(const std::string& modelString);
     int instantiateCellmlApiObjects();
 

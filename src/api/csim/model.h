@@ -55,6 +55,18 @@ public:
      */
      ~Model();
 
+     /**
+      * @brief Convenience method to serialise an XML document from the given
+      * url to a string.
+      * @param url The URL of an XML document to fetch.
+      * @param baseUrl The base URL to use when resolving relative URLs. Will
+      * default to the current working directory if not provided.
+      * @return The fetched document serialised to a string, with the xml:base
+      * property set.
+      */
+     static std::string serialiseUrlToString(const std::string& url,
+                                             const std::string& baseUrl = "");
+
     /**
      * Load the CellML model from the specified URL.
      * @param url The URL from which to load the model.

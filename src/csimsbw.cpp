@@ -290,19 +290,14 @@ int csim_sayHello(char* *outString, int *outLength)
 int csim_serialiseCellmlFromUrl(const char* url,
                                 char* *outString, int *outLength)
 {
-    XmlDoc xml;
-    // resolve URL if needed?
-    std::string u = xml.buildAbsoluteUri(url, "");
-    int code = xml.parseDocument(u);
-    *outString = NULL;
-    *outLength = 0;
-    if (code != 0)
+    std::string model = csim::Model::serialiseUrlToString(url);
+    if (model.empty())
     {
         std::cerr << "Error parsing document at the URL: " << url << std::endl;
+        *outLength = 0;
+        *outString = NULL;
         return CSIM_FAILED;
     }
-    xml.setXmlBase(u);
-    std::string model = xml.dumpString();
     *outLength = model.length();
     *outString = strdup(model.c_str());
     return CSIM_SUCCESS;

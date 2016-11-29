@@ -54,31 +54,46 @@ Model::~Model()
     if (mXmlDoc) delete mXmlDoc;
 }
 
+std::string Model::serialiseUrlToString(const std::string& url,
+                                        const std::string& baseUrl)
+{
+    std::string documentString = "";
+    std::string u = XmlDoc::buildAbsoluteUri(url, baseUrl);
+    std::cout << "Loading CellML Model URL: " << u << std::endl;
+    XmlDoc xml;
+    // try and parse the source document
+    int code = xml.parseDocument(u);
+    if (code == 0)
+    {
+        // make sure the xml:base is set to use when resolving imports.
+        xml.setXmlBase(u);
+        documentString = xml.dumpString();
+        return documentString;
+    }
+    std::cerr << "Error parsing model document at the URL: "
+              << u << std::endl;
+    std::cerr << "Original URL given as: " << url << std::endl;
+    return documentString;
+}
+
 int Model::loadCellmlModel(const std::string &url)
 {
-    if (mModelDefinition) delete static_cast<CellmlModelDefinition*>(mModelDefinition);
-    std::string u = XmlDoc::buildAbsoluteUri(url, "");
-    std::cout << "Loading CellML Model URL: " << u << std::endl;
-    CellmlModelDefinition* cellml = new CellmlModelDefinition();
-    int success = cellml->loadModel(u);
-    if (success != 0)
+    if (mModelDefinition)
     {
-        std::cerr << "Model::loadCellmlModel: Unable to load the model: " << url << std::endl;
-        delete cellml;
+        delete static_cast<CellmlModelDefinition*>(mModelDefinition);
         mModelDefinition = NULL;
-        return UNABLE_TO_LOAD_MODEL_URL;
     }
-    mModelDefinition = static_cast<void*>(cellml);
-    mNumberOfStates = cellml->numberOfStateVariables();
-    if (mXmlDoc) delete mXmlDoc;
-    mXmlDoc = new XmlDoc();
-    mXmlDoc->parseDocument(u);
-    return CSIM_OK;
+    std::string model = serialiseUrlToString(url);
+    return loadCellmlModelFromString(model);
 }
 
 int Model::loadCellmlModelFromString(const std::string &ms)
 {
-    if (mModelDefinition) delete static_cast<CellmlModelDefinition*>(mModelDefinition);
+    if (mModelDefinition)
+    {
+        delete static_cast<CellmlModelDefinition*>(mModelDefinition);
+        mModelDefinition = NULL;
+    }
     std::cout << "Loading CellML Model from given string." << std::endl;
     CellmlModelDefinition* cellml = new CellmlModelDefinition();
     int success = cellml->loadModelFromString(ms);
