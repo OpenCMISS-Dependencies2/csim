@@ -57,9 +57,10 @@ Model::~Model()
 int Model::loadCellmlModel(const std::string &url)
 {
     if (mModelDefinition) delete static_cast<CellmlModelDefinition*>(mModelDefinition);
-    std::cout << "Loading CellML Model URL: " << url << std::endl;
+    std::string u = XmlDoc::buildAbsoluteUri(url, "");
+    std::cout << "Loading CellML Model URL: " << u << std::endl;
     CellmlModelDefinition* cellml = new CellmlModelDefinition();
-    int success = cellml->loadModel(url);
+    int success = cellml->loadModel(u);
     if (success != 0)
     {
         std::cerr << "Model::loadCellmlModel: Unable to load the model: " << url << std::endl;
@@ -71,7 +72,7 @@ int Model::loadCellmlModel(const std::string &url)
     mNumberOfStates = cellml->numberOfStateVariables();
     if (mXmlDoc) delete mXmlDoc;
     mXmlDoc = new XmlDoc();
-    mXmlDoc->parseDocument(url);
+    mXmlDoc->parseDocument(u);
     return CSIM_OK;
 }
 
