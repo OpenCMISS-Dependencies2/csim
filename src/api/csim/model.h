@@ -61,11 +61,15 @@ public:
       * @param url The URL of an XML document to fetch.
       * @param baseUrl The base URL to use when resolving relative URLs. Will
       * default to the current working directory if not provided.
+      * @param setXmlBase Determines whether the xml:base attribute is set on the
+      * serialised XML document (required for CellML models to resolve imports, invalid
+      * in SED-ML).
       * @return The fetched document serialised to a string, with the xml:base
       * property set.
       */
      static std::string serialiseUrlToString(const std::string& url,
-                                             const std::string& baseUrl = "");
+                                             const std::string& baseUrl = "",
+                                             bool setXmlBase = true);
 
     /**
      * Load the CellML model from the specified URL.

@@ -55,7 +55,8 @@ Model::~Model()
 }
 
 std::string Model::serialiseUrlToString(const std::string& url,
-                                        const std::string& baseUrl)
+                                        const std::string& baseUrl,
+                                        bool setXmlBase)
 {
     std::string documentString = "";
     std::string u = XmlDoc::buildAbsoluteUri(url, baseUrl);
@@ -65,8 +66,11 @@ std::string Model::serialiseUrlToString(const std::string& url,
     int code = xml.parseDocument(u);
     if (code == 0)
     {
-        // make sure the xml:base is set to use when resolving imports.
-        xml.setXmlBase(u);
+        if (setXmlBase)
+        {
+            // make sure the xml:base is set to use when resolving imports.
+            xml.setXmlBase(u);
+        }
         documentString = xml.dumpString();
         return documentString;
     }
