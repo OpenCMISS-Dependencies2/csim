@@ -135,13 +135,34 @@ std::string XmlDoc::buildAbsoluteUri(const std::string& uri,
         if (!getcwd(cwd,size)) cwd[0] = '\0';
         b = "file://";
         b += cwd;
-        b += "/";
+        //b += "/";
         free(cwd);
     }
+	std::cout << "Base = <" << b << ">" << std::endl;
+	std::cout << "URI = <" << uri << ">" << std::endl;
     xmlChar* fullURL = xmlBuildURI(BAD_CAST uri.c_str(), BAD_CAST b.c_str());
     std::string url((char*)fullURL);
     xmlFree(fullURL);
-    return url;
+	std::string p = url.substr(0, 4);
+	if (!((p == "file") || (p == "http")))
+	{
+		url = "file:///" + url;
+	}
+#if 0
+	// assume absolute URLs for now...kind of
+	std::string p = uri.substr(0, 4);
+	std::cout << "*******" << p << "********" << std::endl;
+	if ((p == "file") || (p == "http"))
+	{
+		std::string url(uri);
+		return url;
+	}
+	std::string url = base.substr(0, base.find_last_of('/'));
+	url += "/";
+	url += uri;
+#endif
+	std::cout << "URL = <" << url << ">" << std::endl;
+	return url;
 }
 
 int XmlDoc::parseDocumentString(const std::string& ds)
