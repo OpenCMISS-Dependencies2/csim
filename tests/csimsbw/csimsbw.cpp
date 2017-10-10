@@ -355,7 +355,7 @@ TEST(SBW, simulate_import) {
     csim_freeVector(modelString);
     double** values;
     int nData;
-    code = csim_setTolerances(1.0, 1.0, 10);
+    code = csim_setTolerances(1.0e-5, 1.0e-5, 500);
     code = csim_simulate(0.0, 0.0, 7.0, 8, &values, &nData, &length);
     EXPECT_EQ(code, 0);
     EXPECT_EQ(length, 5);
@@ -385,7 +385,7 @@ TEST(SBW, simulate_import_delayed_start) {
     csim_freeVector(modelString);
     double** values;
     int nData;
-    code = csim_setTolerances(1.0, 1.0, 10);
+    code = csim_setTolerances(1.0e-5, 1.0e-5, 500);
     code = csim_simulate(0.0, 3.5, 7.0, 4, &values, &length, &nData);
     EXPECT_EQ(code, 0);
     EXPECT_EQ(length, 5);
