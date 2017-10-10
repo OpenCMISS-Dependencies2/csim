@@ -51,6 +51,10 @@ find_package(LibCellML ${LIBCELLML_VERSION} CONFIG REQUIRED)
 find_package(ZLIB ${ZLIB_VERSION} CONFIG REQUIRED)
 find_package(LibXml2 ${LIBXML2_VERSION} CONFIG REQUIRED)
 
+find_package(sundials_cvode_static CONFIG REQUIRED)
+find_package(sundials_nvecserial_static CONFIG REQUIRED)
+
+
 # Since LLVM 3.5 the cmake files are available in the releases, so consolidate on the "cmake" method now.
 find_package(LLVM ${LLVM_VERSION} CONFIG REQUIRED)
 find_package(Clang ${CLANG_VERSION} CONFIG REQUIRED)
@@ -120,6 +124,8 @@ target_link_libraries(csim PUBLIC
   LLVMExecutionEngine
   LLVMMCJIT
   clangCodeGen
+  sundials_cvode_static
+  sundials_nvecserial_static
   xml2
   ${ZLIB_LIBRARIES}
   ${CURL_LIBRARIES}

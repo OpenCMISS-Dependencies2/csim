@@ -9,22 +9,39 @@
 #include "csim/error_codes.h"
 #include "xmlutils.h"
 
+#include <cvode/cvode.h>             /* main integrator header file */
+#include <cvode/cvode_dense.h>       /* use CVDENSE linear solver */
+#include <cvode/cvode_band.h>        /* use CVBAND linear solver */
+#include <cvode/cvode_diag.h>        /* use CVDIAG linear solver */
+#include <nvector/nvector_serial.h>  /* serial N_Vector types, fct. and macros */
+#include <sundials/sundials_types.h> /* definition of realtype */
+#include <sundials/sundials_math.h>  /* contains the macros ABS, SUNSQR, and EXP*/
+
 #define CSIM_SUCCESS 0
 #define CSIM_FAILED 1
+
+#define ATOL RCONST(1.0e-6)
+#define RTOL RCONST(0.0)
+
+/* Function called by CVODE */
+static int f(realtype t, N_Vector y, N_Vector ydot, void *user_data);
 
 // assuming we only deal with one model at a time
 class CsimWrapper {
 public:
     CsimWrapper() : initFunction(NULL), modelFunction(NULL), model(NULL),
         voi(0.0), states(NULL), rates(NULL), inputs(NULL), outputs(NULL),
-        maxSteps(1)
-    {}
+        maxSteps(1), cvode_mem(nullptr)
+    {
+        ud = new UserData;
+    }
     ~CsimWrapper() {
         if (model) delete model;
         if (states) delete [] states;
         if (rates) delete [] rates;
         if (inputs) delete [] inputs;
         if (outputs) delete [] outputs;
+        if (ud) delete ud;
     }
 
     csim::InitialiseFunction initFunction;
@@ -34,6 +51,16 @@ public:
     std::map<std::string, int> outputVariables;
     double voi, *states, *rates, *inputs, *outputs;
     int maxSteps; // currently used to define how many steps to take internally
+
+    // My user data class
+    struct UserData
+    {
+        csim::ModelFunction modelFunction;
+        N_Vector states, rates, inputs, outputs;
+    };
+
+    void* cvode_mem;
+    UserData* ud;
 
     struct
     {
@@ -83,21 +110,46 @@ public:
         return CSIM_SUCCESS;
     }
 
+    void toCvodeData()
+    {
+        for (int i=0;i<model->numberOfStateVariables();++i)
+        {
+            NV_Ith_S(ud->states, i) = states[i];
+            NV_Ith_S(ud->rates, i) = rates[i];
+        }
+        for (int i=0;i<model->numberOfOutputVariables();++i)
+        {
+            NV_Ith_S(ud->outputs, i) = outputs[i];
+        }
+        for (int i=0;i<model->numberOfInputVariables();++i)
+        {
+            NV_Ith_S(ud->inputs, i) = inputs[i];
+        }
+    }
+
+    void fromCvodeData()
+    {
+        for (int i=0;i<model->numberOfStateVariables();++i)
+        {
+            states[i] = NV_Ith_S(ud->states, i);
+            rates[i] = NV_Ith_S(ud->rates, i);
+        }
+        for (int i=0;i<model->numberOfOutputVariables();++i)
+        {
+            outputs[i] = NV_Ith_S(ud->outputs, i);
+        }
+        for (int i=0;i<model->numberOfInputVariables();++i)
+        {
+            inputs[i] = NV_Ith_S(ud->inputs, i);
+        }
+    }
+
     int integrate(double tOut)
     {
-        int n = model->numberOfStateVariables();
-        double interval = tOut - voi;
-        double step = interval / ((double)maxSteps);
-        for (int j=0; j<maxSteps; ++j)
-        {
-            voi += step;
-            modelFunction(voi, states, rates, outputs, inputs);
-            for (int i=0; i<n; ++i)
-            {
-                states[i] += rates[i]*step;
-                //std::cout << "time: " << voi << "; state[" << i << "] = " << states[i] << std::endl;
-            }
-        }
+        CVodeSetStopTime(cvode_mem, tOut);
+        CVode(cvode_mem, tOut, ud->states, &voi, CV_NORMAL);
+        modelFunction(tOut, NV_DATA_S(ud->states), NV_DATA_S(ud->rates),
+                      NV_DATA_S(ud->outputs), NV_DATA_S(ud->inputs));
         return CSIM_SUCCESS;
     }
 };
@@ -143,6 +195,19 @@ int csim_loadCellml(const char* modelString)
     _csim->modelFunction(_csim->voi, _csim->states, _csim->rates, _csim->outputs,
                          _csim->inputs);
     _csim->cacheState();
+
+    _csim->ud->modelFunction = _csim->modelFunction;
+    _csim->ud->states = N_VNew_Serial(_csim->model->numberOfStateVariables());
+    _csim->ud->rates = N_VNew_Serial(_csim->model->numberOfStateVariables());
+    _csim->ud->inputs = N_VNew_Serial(_csim->model->numberOfInputVariables());
+    _csim->ud->outputs = N_VNew_Serial(_csim->model->numberOfOutputVariables());
+    // now get CVODE set up
+    double reltol = RTOL, abstol = ATOL;
+    _csim->toCvodeData();
+    _csim->cvode_mem = CVodeCreate(CV_ADAMS, CV_FUNCTIONAL);
+    CVodeInit(_csim->cvode_mem, f, _csim->voi, _csim->ud->states);
+    CVodeSStolerances(_csim->cvode_mem, reltol, abstol);
+    CVodeSetUserData(_csim->cvode_mem, (void*)(_csim->ud));
     return CSIM_SUCCESS;
 }
 
@@ -152,6 +217,10 @@ int csim_reset()
 		return CSIM_SUCCESS;
 	
     _csim->popCache();
+
+    _csim->toCvodeData();
+    CVodeReInit(_csim->cvode_mem, _csim->voi, _csim->ud->states);
+
     return CSIM_SUCCESS;
 }
 
@@ -244,8 +313,13 @@ int csim_simulate(
     //for (int i=0; i<length; ++i) data[i] = (double*)malloc(sizeof(double)*nData);
     // set the initial time
     _csim->voi = initialTime;
-    // step to the start time
-    _csim->integrate(startTime);
+    if (startTime != initialTime)
+    {
+        // step to the start time
+        _csim->toCvodeData();
+        _csim->integrate(startTime);
+        _csim->fromCvodeData();
+    }
     // grab the values
     data[0] = _getValues(&length);
     //std::cout << std::endl;
@@ -267,7 +341,9 @@ int csim_oneStep(double step)
 		return CSIM_SUCCESS;
 	
     double final = _csim->voi + step;
+    _csim->toCvodeData();
     _csim->integrate(final);
+    _csim->fromCvodeData();
     return CSIM_SUCCESS;
 }
 
@@ -277,6 +353,10 @@ int csim_setTolerances(double aTol, double rTol, int maxSteps)
 		return CSIM_SUCCESS;
 	
     _csim->maxSteps = maxSteps;
+
+    CVodeSStolerances(_csim->cvode_mem, rTol, aTol);
+    CVodeSetMaxNumSteps(_csim->cvode_mem, maxSteps);
+
     return CSIM_SUCCESS;
 }
 
@@ -326,3 +406,11 @@ void csim_freeMatrix(void** matrix, int numRows)
     }
     free(matrix);
 }
+
+int f(realtype x, N_Vector y, N_Vector ydot, void *user_data)
+{
+    CsimWrapper::UserData* ud = (CsimWrapper::UserData*)user_data;
+    ud->modelFunction(x, NV_DATA_S(y), NV_DATA_S(ydot), NV_DATA_S(ud->outputs), NV_DATA_S(ud->inputs));
+    return 0;
+}
+
