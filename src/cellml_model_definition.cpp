@@ -671,9 +671,18 @@ std::string generateCodeForModel(CellmlApiObjects* capi,
              << "double exp(double x);\n"
              << "double floor(double x);\n"
              << "double pow(double x, double y);\n"
-             << "double factorial(double x);\n"
+             << "double factorial(double x)\n{\n"
+             << "  double ret = 1.0;\n"
+             << "  while (x > 0.0)\n"
+             << "  {\n"
+             << "    ret *= x;\n"
+             << "    x -= 1.0;\n"
+             << "  }\n"
+             << "  return ret;\n"
+             << "}\n"
              << "double log(double x);\n"
-             << "double arbitrary_log(double x, double base);\n"
+             << "double arbitrary_log(double x, double base)\n"
+             << "{ return log(x) / log(base); }\n"
              << "double gcd_pair(double a, double b);\n"
              << "double lcm_pair(double a, double b);\n"
              << "double gcd_multi(unsigned int size, ...);\n"
@@ -787,3 +796,5 @@ std::string clearCodeAssignments(const std::string& s, const std::string& array,
     }
     return code;
 }
+
+
